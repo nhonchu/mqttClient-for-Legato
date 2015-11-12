@@ -9,13 +9,19 @@ Setup Dev Host PC
 -----------------
 Makefile is provided for Command-Line building mode, please refer to [Setting up Command-Line mode dev host](http://www.legato.io/legato-docs/15_08/getstarted_c_linstall_main.html)
 
+
 Build the application
 ---------------------
+~~~
 make wp85
+~~~
+
 
 Install the app on target (MangOH/WP8548)
 -----------------------------------------
+~~~
 instapp mqttClient.wp85 <IP address of target>
+~~~
 
 
 Start the app on target (MangOH/WP8548)
@@ -31,7 +37,9 @@ Configure mqttClient
 ~~~
 to display options:
 	execInApp mqttClient config -h
+
 execInApp mqttClient config -b <mqtt broker url> -p <port number> -k <keep alive (seconds)> -q <QoS (0,1 or 2)>
+
 to display current setting in the log (use logread -f in a separate console to visualize live output log):
 	execInApp mqttClient config
 ~~~
@@ -40,8 +48,10 @@ to display current setting in the log (use logread -f in a separate console to v
 Start MQTT session
 ------------------
 ~~~
-*execInApp mqttClient connect -h* to display options
-*execInApp mqttClient connect -u <username> -p <password>*
+to display options
+	execInApp mqttClient connect -h
+
+execInApp mqttClient connect -u <username> -p <password>
 ~~~
 use logread -f in a separate console to visualize live output log, a successful connection is indicated by the following log:
 - "MQTT connection status= 0"
@@ -51,8 +61,8 @@ use logread -f in a separate console to visualize live output log, a successful 
 Send MQTT message
 -----------------
 ~~~
-*execInApp mqttClient send <dataKey> <dataValue>*
-e.g. execInApp mqttClient send time 9:37
+execInApp mqttClient send <dataKey> <dataValue>
+	e.g. execInApp mqttClient send time 9:37
 ~~~
 
 
