@@ -11,11 +11,11 @@ Makefile is provided for Command-Line building mode, please refer to [Setting up
 
 Build the application
 ---------------------
-*make wp85*
+make wp85
 
 Install the app on target (MangOH/WP8548)
 -----------------------------------------
-*instapp mqttClient.wp85 <IP address of target>*
+instapp mqttClient.wp85 <IP address of target>
 
 
 Start the app on target (MangOH/WP8548)
@@ -29,9 +29,11 @@ app start mqttClient
 Configure mqttClient
 --------------------
 ~~~
-*execInApp mqttClient config -h* to display options
-*execInApp mqttClient config -b <mqtt broker url> -p <port number> -k <keep alive (seconds)> -q <QoS (0,1 or 2)>*
-*execInApp mqttClient config* to display current setting in the log (use logread -f in a separate console to visualize live output log)
+to display options:
+	execInApp mqttClient config -h
+execInApp mqttClient config -b <mqtt broker url> -p <port number> -k <keep alive (seconds)> -q <QoS (0,1 or 2)>
+to display current setting in the log (use logread -f in a separate console to visualize live output log):
+	execInApp mqttClient config
 ~~~
 
 
