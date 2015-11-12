@@ -1,0 +1,8 @@
+
+FUNCTION Notify
+(
+    string szPath[128] IN,
+    string szKey[128] IN,
+    string szValue[128] IN,
+    string szTimestamp[128] IN
+);

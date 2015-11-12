@@ -1,0 +1,31 @@
+
+FUNCTION ViewConfig
+(
+
+);
+
+FUNCTION Config
+(
+    string 		szBrokerUrl[256] IN,
+    int32 		n32PortNumber IN,
+    int32 		n32KeepAlive IN,
+    int32 		n32QoS IN
+);
+
+FUNCTION Connect
+(
+	string		szUser[32] IN,
+	string		szPassword[32] IN
+);
+
+FUNCTION Disconnect
+(
+
+);
+
+FUNCTION Send
+(
+    string 		szKey[128] IN,
+    string 		szValue[128] IN
+);
+
