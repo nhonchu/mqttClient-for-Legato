@@ -60,6 +60,7 @@ use logread -f in a separate console to visualize live output log, a successful 
 
 Send MQTT message
 -----------------
+Wait for a successful MQTT connection (refer to previous section) before sending messages.
 ~~~
 execInApp mqttClient send <dataKey> <dataValue>
 	e.g. execInApp mqttClient send time 9:37
@@ -77,4 +78,11 @@ Jan  4 08:09:01 swi-mdm9x15 user.info Legato:  INFO | mqttClient[16755]/mqttClie
 Jan  4 08:09:01 swi-mdm9x15 user.info Legato:  INFO | mqttClient[16755]/mqttClientComp T=main | mqttMain.c onIncomingMessage() 305 | --> Incoming message from AirVantage: home.BedRoom1.Shutters = true @ 1445527665027
 Jan  4 08:09:01 swi-mdm9x15 user.info Legato:  INFO | mqttClient[16755]/mqttClientComp T=main | mqttMain.c publishAckCmd() 235 | [ACK Message] [{"uid": "59976b814d0b45d1b12371e66fc87d1f", "status" : "OK"}]
 Jan  4 08:09:01 swi-mdm9x15 user.info Legato:  INFO | mqttClient[16755]/mqttClientComp T=main | mqttMain.c publishAckCmd() 247 | Publish on 359377060002226/acks/json
+~~~
+
+
+Close MQTT session
+-----------------
+~~~
+execInApp mqttClient disconnect
 ~~~
