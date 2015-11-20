@@ -63,7 +63,7 @@ Send MQTT message
 Wait for a successful MQTT connection (refer to previous section) before sending messages.
 ~~~
 execInApp mqttClient send <dataKey> <dataValue>
-	e.g. execInApp mqttClient send time 9:37
+	e.g. execInApp mqttClient send temperature 20.4
 ~~~
 
 
