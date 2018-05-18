@@ -1,16 +1,16 @@
-TARGETS := ar7 wp7 ar86 wp85 localhost
+TARGETS := $(MAKECMDGOALS)
 
 .PHONY: all $(TARGETS)
 all: $(TARGETS)
 
 $(TARGETS):
-	export TARGET=$@ ; \
 	mkapp -v -t $@ \
 		  -i $(LEGATO_ROOT)/interfaces/dataConnectionService \
 		  -i $(LEGATO_ROOT)/interfaces/modemServices \
-		  -i mqttClientComp/inc \
-		  -i mqttClientComp/inc/mqtt \
+		  -i mqttMainComponent/inc \
+		  -i mqttMainComponent/inc/mqtt \
 		  mqttClient.adef
 
 clean:
-	rm -rf _build_* *.ar7 *.wp7 *.ar86 *.wp85 *.localhost
+	rm -rf _build_* *.update
+
