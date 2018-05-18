@@ -3,12 +3,12 @@ requires:
 {
     api:
     {
-        mqttApi.api
+        mqtt.api
     }
 }
 
 sources:
 {
-    config.c
+    mqttTest.c
 }
 

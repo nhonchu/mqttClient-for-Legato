@@ -32,6 +32,11 @@
 #define     AV_JSON_KEY_MAX_COUNT       10
 #define     AV_JSON_KEY_MAX_LENGTH      32
 
+
+#define     MAX_ARGS                    10
+#define     MAX_ARG_LENGTH              32
+#define     MAX_INMESSAGE_IN_LIST       20
+
 typedef struct
 {
     Client          oMqttClient;
@@ -47,10 +52,23 @@ typedef struct
     char            szSubscribeTopic[2*DEFAULT_SIZE];
 } ST_PROGRAM_CONTEXT;
 
+typedef struct
+{
+    le_sls_Link_t   link;
+    char            message[256];
+} ST_MQTT_INCOMING_MSG_T;
+
+static le_sls_List_t        g_inMessageList = LE_SLS_LIST_INIT;
+static le_mem_PoolRef_t     g_inMessagePool = NULL;
+
 static ST_PROGRAM_CONTEXT   g_stContext;
+
+static le_data_ConnectionStateHandlerRef_t  g_dataSessionHandle = NULL;
 
 static unsigned char        g_buf[MAX_PAYLOAD_SIZE];
 static unsigned char        g_readbuf[MAX_PAYLOAD_SIZE];
+
+
 //--------------------------------------------------------------------------------------------------
 /**
  *  The Data Connection reference
@@ -58,6 +76,76 @@ static unsigned char        g_readbuf[MAX_PAYLOAD_SIZE];
 //--------------------------------------------------------------------------------------------------
 static le_data_RequestObjRef_t  g_RequestRef = NULL;
 
+
+
+le_result_t       QueueIncomingMessage(const char* message)
+{
+    ST_MQTT_INCOMING_MSG_T*    newNodePtr = NULL;
+
+    if (g_inMessagePool == NULL)
+    {
+        g_inMessagePool = le_mem_CreatePool("mqtt-incoming-message", sizeof(ST_MQTT_INCOMING_MSG_T));
+        le_mem_ExpandPool(g_inMessagePool, 20);
+    }
+
+    newNodePtr = le_mem_ForceAlloc(g_inMessagePool);
+    if (newNodePtr)
+    {
+        strcpy(newNodePtr->message, message);
+
+        // Initialize the link.
+        newNodePtr->link = LE_SLS_LINK_INIT;
+
+        // Insert the new node to the tail.
+        le_sls_Queue(&g_inMessageList, &(newNodePtr->link));
+
+        if (le_sls_NumLinks(&g_inMessageList) > MAX_INMESSAGE_IN_LIST)
+        {
+            //discard the top one in the list (oldest)
+            le_sls_Link_t*  linkPtr = le_sls_Pop(&g_inMessageList);
+            ST_MQTT_INCOMING_MSG_T* topNodePtr = CONTAINER_OF(linkPtr, ST_MQTT_INCOMING_MSG_T, link);
+            le_mem_Release(topNodePtr);
+        }
+
+        PrintMessage("Incoming messages queued : %d", le_sls_NumLinks(&g_inMessageList));
+        return LE_OK;
+    }
+
+    return LE_FAULT;
+}
+
+le_result_t HandleReceivedCommand(char * response, size_t responseSize)
+{
+    le_result_t   ret = LE_OK;
+
+    ST_MQTT_INCOMING_MSG_T*     topNodePtr = NULL;
+    le_sls_Link_t*              linkPtr = NULL;
+    size_t                      byteCount = 0;
+
+    linkPtr = le_sls_Pop(&g_inMessageList);
+
+    response[0] = 0;
+
+    while (linkPtr)
+    {
+        topNodePtr = CONTAINER_OF(linkPtr, ST_MQTT_INCOMING_MSG_T, link);
+
+        strcat(response, topNodePtr->message);
+        strcat(response, "\n");
+        byteCount += strlen(topNodePtr->message) + 1;
+
+        le_mem_Release(topNodePtr);
+
+        if (byteCount >= responseSize)
+        {
+            break;
+        }
+
+        linkPtr = le_sls_Pop(&g_inMessageList);
+    };
+
+    return ret;
+}
 
 static void PrintMessage(char* szTrace, ...)
 {
@@ -76,7 +164,8 @@ static void PrintMessage(char* szTrace, ...)
     }
     else
     {
-        fprintf(stderr, "    %s\n", szMessage);
+        puts(szMessage);
+        puts("\n");
     }
 }
 //--------------------------------------------------------------------------------------------------
@@ -123,6 +212,11 @@ static void DisconnectData
     }
 
     LE_INFO("Releasing the data connection.");
+    if (g_dataSessionHandle)
+    {
+        le_data_RemoveConnectionStateHandler(g_dataSessionHandle);
+        g_dataSessionHandle = NULL;
+    }
     le_data_Release(g_RequestRef);
 
     g_RequestRef = NULL;
@@ -246,6 +340,8 @@ static int publishAckCmd(const char* szUid, int nAck, char* szMessage)
     sprintf(pTopic, "%s%s", g_stContext.szDeviceId, TOPIC_NAME_ACK);
     LE_INFO("Publish on %s\n", pTopic);
 
+    PrintMessage("Published ACK - %s\n", pTopic);
+
     int rc = MQTTPublish(&g_stContext.oMqttClient, pTopic, &msg);
     if (rc != 0)
     {
@@ -277,6 +373,8 @@ static void onIncomingMessage(MessageData* md)
 
     LE_INFO("\nIncoming data:\n%.*s%s\n", (int)message->payloadlen, (char*)message->payload, " ");
 
+    //PrintMessage("\nIncoming data:\n%.*s%s\n", (int)message->payloadlen, (char*)message->payload, " ");
+
     char* szPayload = (char *) malloc(message->payloadlen+1);
 
     memcpy(szPayload, (char*)message->payload, message->payloadlen);
@@ -304,7 +402,12 @@ static void onIncomingMessage(MessageData* md)
             {
                 LE_INFO("--> Incoming message from AirVantage: %s.%s = %s @ %s", pszId, szKey, pszValue, pszTimestamp);
 
+                PrintMessage("--> Incoming message from AirVantage: %s.%s = %s @ %s", pszId, szKey, pszValue, pszTimestamp);
+
                 //receiverApi_Notify(pszId, szKey, pszValue, pszTimestamp);
+
+                sprintf(szPayload, "%s.%s = %s @ %s", pszId, szKey, pszValue, pszTimestamp);
+                QueueIncomingMessage(szPayload);
 
                 free(pszValue);
             }
@@ -360,6 +463,8 @@ static int InitMqtt
  
     LE_INFO("Connecting to connect to tcp://%s:%d\n", g_stContext.szBrokerUrl, g_stContext.u32PortNumber);
 
+    PrintMessage("Connecting to connect to tcp://%s:%d\n", g_stContext.szBrokerUrl, g_stContext.u32PortNumber);
+
     MQTTPacket_connectData data = MQTTPacket_connectData_initializer;       
     data.willFlag = 0;
     data.MQTTVersion = MQTT_VERSION;
@@ -381,6 +486,8 @@ static int InitMqtt
     if (g_stContext.oMqttClient.isconnected)
     {
         LE_INFO("MQTT connected");
+
+        PrintMessage("MQTT connected");
     }
 
     if (rc == SUCCESS) 
@@ -388,6 +495,7 @@ static int InitMqtt
         //connected
         LE_INFO("MQTT connected...");
 
+        PrintMessage("MQTT connected");
         
         LE_INFO("Subscribing to %s\n", g_stContext.szSubscribeTopic);
         rc = MQTTSubscribe(&g_stContext.oMqttClient, g_stContext.szSubscribeTopic, 0, onIncomingMessage);
@@ -416,6 +524,8 @@ static int InitMqtt
     {
         LE_INFO("MQTT connection Failed");
 
+        PrintMessage("MQTT connection Failed");
+
         return 1;
     }
 }
@@ -436,6 +546,8 @@ static void DcsStateHandler
     if (isConnected)
     {
         LE_INFO("%s connected! Starting MQTT session", intfName);
+
+        PrintMessage("DSC connected");
         
         if (InitMqtt())
         {
@@ -447,6 +559,8 @@ static void DcsStateHandler
     {
         LE_INFO("%s disconnected!", intfName);
 
+        PrintMessage("DSC disconnected");
+
         if (g_stContext.oMqttClient.isconnected)
         {
             MQTTDisconnect(&g_stContext.oMqttClient);
@@ -454,6 +568,51 @@ static void DcsStateHandler
         }
     }
 }
+
+
+
+
+le_result_t Connect
+(
+    void
+)
+{
+    if (g_stContext.oMqttClient.isconnected)
+    {
+        LE_INFO("\n*** MQTT session already active ***\n");
+        return LE_DUPLICATE;
+    }
+
+    // register handler for data connection state change
+    g_dataSessionHandle = le_data_AddConnectionStateHandler(DcsStateHandler, NULL);
+
+    LE_INFO("Initiated Data Connection");
+    ConnectData();
+
+    return LE_OK;
+}
+
+void Disconnect
+(
+    void
+)
+{
+    if (g_stContext.oMqttClient.isconnected)
+    {
+        LE_INFO("Disconnecting MQTT session");
+        MQTTDisconnect(&g_stContext.oMqttClient);
+        g_stContext.oNetwork.disconnect(&g_stContext.oNetwork);
+
+        DisconnectData();
+    }
+    else
+    {
+        LE_INFO("\n*** There is no active MQTT session ***\n");
+        return;
+    }
+}
+
+#if 0
 
 static void ViewConfig
 (
@@ -506,57 +665,8 @@ static void Config
     PrintMessage("New settings will be applied at the next connection");
 }
 
-void Connect
-(
-    const char*   szUser,
-    const char*   szPassword
-)
-{
-    if (g_stContext.oMqttClient.isconnected)
-    {
-        LE_INFO("\n*** MQTT session already active ***\n");
-        return;
-    }
 
-    if (strlen(szUser) > 0)
-    {
-        strcpy(g_stContext.szDeviceId, szUser);
-        strcpy(g_stContext.szSecret, szPassword);
-    }
-    else if (strlen(szPassword) > 0)
-    {
-        strcpy(g_stContext.szSecret, szPassword);
-    }
-
-    // register handler for data connection state change
-    le_data_AddConnectionStateHandler(DcsStateHandler, NULL);
-
-    LE_INFO("Initiated Data Connection");
-    ConnectData();
-}
-
-void Disconnect
-(
-    void
-)
-{
-    if (g_stContext.oMqttClient.isconnected)
-    {
-        LE_INFO("Disconnecting MQTT session");
-        MQTTDisconnect(&g_stContext.oMqttClient);
-        g_stContext.oNetwork.disconnect(&g_stContext.oNetwork);
-
-        DisconnectData();
-    }
-    else
-    {
-        LE_INFO("\n*** There is no active MQTT session ***\n");
-        return;
-    }
-}
-
-
-void mqttApi_ViewConfig
+void mqtt_ViewConfig
 (
 )
 {
@@ -564,7 +674,7 @@ void mqttApi_ViewConfig
     ViewConfig();
 }
 
-void mqttApi_Config
+void mqtt_Config
 (
     const char*     szBrokerUrl, ///< [IN] URL
     int32_t         n32PortNumber,
@@ -576,7 +686,7 @@ void mqttApi_Config
     Config(szBrokerUrl, n32PortNumber, n32KeepAlive, n32QoS);
 }
 
-void mqttApi_Connect
+void mqtt_Connect
 (
     const char*  szUser, ///< [IN] username
     const char*  szPassword ///< [IN] password
@@ -586,7 +696,7 @@ void mqttApi_Connect
     Connect(szUser, szPassword);
 }
 
-void mqttApi_Disconnect
+void mqtt_Disconnect
 (
     void
 )
@@ -595,7 +705,7 @@ void mqttApi_Disconnect
     Disconnect();
 }
 
-void mqttApi_Send
+void mqtt_Send
 (
     const char*  szKey, ///< [IN] Key
     const char*  szValue ///< [IN] Value
@@ -604,7 +714,301 @@ void mqttApi_Send
     LE_INFO("API: Received MQTT Sendind request...");
     SendMessage(szKey, szValue);
 }
+#endif
 
+//--------------------------------------------------------------------------------------------
+
+le_result_t HandleConfigCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_LENGTH], char* response, size_t responseSize)
+{
+    le_result_t  ret = LE_BAD_PARAMETER;
+
+    if (strcasecmp("get", argument[argIndex])==0)
+    {
+        //command format: config get
+
+        sprintf(response, "broker : %s\nport : %d\nkalive : %d\nqos : %d\nusername : %s\npassword : %s\n",
+                                g_stContext.szBrokerUrl,
+                                g_stContext.u32PortNumber,
+                                g_stContext.u32KeepAlive,
+                                g_stContext.u32QoS,
+                                g_stContext.szDeviceId,
+                                g_stContext.szSecret);
+
+        return LE_OK;
+    }
+    else if (strcasecmp("set", argument[argIndex])==0)
+    {
+        if (strcasecmp("broker", argument[argIndex+1])==0)
+        {
+            strcpy(g_stContext.szBrokerUrl, argument[argIndex+2]);
+            ret = LE_OK;
+        }
+        else if (strcasecmp("port", argument[argIndex+1])==0)
+        {
+            g_stContext.u32PortNumber = atoi( argument[argIndex+2]);
+            ret = LE_OK;
+        }
+        else if (strcasecmp("kalive", argument[argIndex+1])==0)
+        {
+            g_stContext.u32KeepAlive = atoi( argument[argIndex+2]);
+            ret = LE_OK;
+        }
+        else if (strcasecmp("qos", argument[argIndex+1])==0)
+        {
+            g_stContext.u32QoS = atoi( argument[argIndex+2]);
+            ret = LE_OK;
+        }
+        else if (strcasecmp("username", argument[argIndex+1])==0)
+        {
+            strcpy(g_stContext.szDeviceId, argument[argIndex+2]);
+            ret = LE_OK;
+        }
+        else if (strcasecmp("password", argument[argIndex+1])==0)
+        {
+            strcpy(g_stContext.szSecret, argument[argIndex+2]);
+            ret = LE_OK;
+        }
+        
+        if (LE_OK == ret)
+        {
+            PrintMessage("config: config changed");
+        }
+        else
+        {
+            PrintMessage("config: failed to change config");   
+        }
+    }
+
+    return ret;
+}
+
+
+le_result_t HandleSessionCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_LENGTH], char* response, size_t responseSize)
+{
+    // Command format : session start/stop
+
+    le_result_t     ret = LE_NOT_FOUND;
+
+    if (strcasecmp("start", argument[argIndex])==0)
+    {
+        ret = Connect();
+        if (LE_OK == ret)
+        {
+            PrintMessage("session: starting");
+        }
+        else if (LE_DUPLICATE == ret)
+        {
+            PrintMessage("session : already started");
+        }
+        else
+        {
+            PrintMessage("session : failed to start");   
+        }
+    }
+    else if (strcasecmp("stop", argument[argIndex])==0)
+    {
+        Disconnect();
+        PrintMessage("session: stopping");
+        ret = LE_OK;
+    }
+    else if (strcasecmp("status", argument[argIndex])==0)
+    {
+        if (g_stContext.oMqttClient.isconnected)
+        {
+            sprintf(response, "session : started");
+        }
+        else
+        {
+            sprintf(response, "session : stopped");
+        }
+
+        ret = LE_OK;
+        PrintMessage(response);
+    }
+    else
+    {
+        PrintMessage("session : invalid command");
+    }
+
+    return ret;
+}
+
+le_result_t HandleSendCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_LENGTH], char * response, size_t responseSize)
+{
+    le_result_t     ret = LE_BAD_PARAMETER;
+
+    //command format: send <path> [<value>]
+    if (strlen(argument[argIndex+1]) > 0)
+    {
+        int rc = SendMessage(argument[argIndex], argument[argIndex+1]);
+
+        if (rc)
+        {
+            PrintMessage("send: failed to send data");
+            ret = LE_FAULT;
+        }
+        else
+        {
+            
+            PrintMessage("send : sent OK");
+            ret = LE_OK;
+        }
+    }
+    else
+    {
+        PrintMessage("send : bad_parameter");
+    }
+
+    return ret;
+}
+
+char* prv_end_of_space(char* buffer)
+{
+    while (isspace(buffer[0]&0xff))
+    {
+        buffer++;
+    }
+    return buffer;
+}
+
+char* get_end_of_arg(char* buffer)
+{
+    while (buffer[0] != 0 && !isspace(buffer[0]&0xFF))
+    {
+        buffer++;
+    }
+    return buffer;
+}
+
+char * get_next_arg(char * buffer, char** end)
+{
+    // skip arg
+    buffer = get_end_of_arg(buffer);
+    // skip space
+    buffer = prv_end_of_space(buffer);
+    if (NULL != end)
+    {
+        *end = (void *) get_end_of_arg(buffer);
+    }
+
+    return buffer;
+}
+
+int decodeArgument(const char* command, char argument[MAX_ARGS][MAX_ARG_LENGTH])
+{
+    char    args[256] = {0};
+    char *  end = NULL;
+    char *  value = args;
+
+    strcpy(args, command);
+
+    int     argLen, index=0;
+
+    int argCount = 0;
+
+    LE_INFO("decodeArg - %s", args);
+
+    memset(argument, 0, MAX_ARGS*MAX_ARG_LENGTH);
+
+    //              value    end
+    //              |        |
+    //              V        V
+    //get 1st arg : argument1 argument2 argument3
+    end = get_end_of_arg(value);
+    argLen = end-value;
+
+    if (argLen >= 1)
+    {
+        memcpy(argument[index], value, argLen);
+
+        LE_INFO("decodeArg(%d) = %s", index, argument[index]);
+
+        index++;
+        argCount++;
+    }
+    else
+    {
+        return argCount;
+    }
+
+    LE_INFO("decodeArg(%d) = %s", index-1, argument[index-1]);
+
+    while (1)
+    {
+        value = get_next_arg(end, &end);
+        argLen = end-value;
+
+        if (argLen >= 1)
+        {
+            memcpy(argument[index], value, argLen);
+
+            LE_INFO("decodeArg(%d) = %s", index, argument[index]);
+
+            index++;
+            argCount++;
+        }
+        else
+        {
+            return argCount;
+        }
+    }
+
+    return argCount;
+}
+
+
+void mqtt_ExecuteCommand
+(
+    const char* userCommand,
+    int32_t*    returnCodePtr,
+    char*       response,            ///< [OUT] Retrieved string
+    size_t      responseSize         ///< [IN] String buffer size in bytes
+)
+{
+    *returnCodePtr = LE_NOT_FOUND;
+
+    LE_INFO("MQTT_ExecuteCommand");
+
+    char  argument[MAX_ARGS][MAX_ARG_LENGTH];
+    int   argCount = 0;
+
+    argCount = decodeArgument(userCommand, argument);
+
+    response[0] = 0;
+            
+    if (argCount > 0)
+    {
+        if (strcasecmp("quit", argument[0])==0)
+        {
+            Disconnect();
+
+            *returnCodePtr = LE_OK;
+
+            exit(EXIT_SUCCESS);
+        }
+        else if (strcasecmp("config", argument[0])==0)
+        {
+            *returnCodePtr = HandleConfigCommand(1, argument, response, responseSize);
+        }
+        else if (strcasecmp("session", argument[0])==0)
+        {
+            *returnCodePtr = HandleSessionCommand(1, argument, response, responseSize);
+        }
+        else if (strcasecmp("send", argument[0])==0)
+        {
+            *returnCodePtr = HandleSendCommand(1, argument, response, responseSize);
+        }
+        
+        else if (strcasecmp("received", argument[0])==0)
+        {
+            *returnCodePtr = HandleReceivedCommand(response, responseSize);
+        }
+        else
+        {
+            puts("invalid command");       
+        }
+    }
+}
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -626,12 +1030,23 @@ COMPONENT_INIT
     strcpy(g_stContext.szKey, "");
     strcpy(g_stContext.szValue, "");
 
-    le_info_ConnectService();
+    //le_info_ConnectService();
     le_info_GetImei(g_stContext.szDeviceId, sizeof(g_stContext.szDeviceId));
     //strcpy(g_stContext.szDeviceId, "00000000B6AF4AFF"); //default
 
     sprintf(g_stContext.szSubscribeTopic, "%s%s", g_stContext.szDeviceId, TOPIC_NAME_SUBSCRIBE);
 
     LE_INFO("mqttClient Launched, IMEI= %s", g_stContext.szDeviceId);
+
+    PrintMessage("MQTT Client Service started:");
+
+    int32_t nRet = 0;
+    char    response[256] = {0};
+    mqtt_ExecuteCommand("config get", &nRet, response, sizeof(response));
+    
+    if (strlen(response))
+    {
+        PrintMessage(response);
+    }
 }
 

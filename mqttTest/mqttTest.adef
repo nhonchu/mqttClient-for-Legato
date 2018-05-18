@@ -1,0 +1,26 @@
+sandboxed: false
+
+executables:
+{
+    mqttTest  = ( mqttTestComp )
+}
+
+processes: 
+{
+    envVars:
+    {
+        LE_LOG_LEVEL = DEBUG
+    }
+
+    run:
+    {
+        (mqttTest)
+    }
+}
+
+start: manual
+
+bindings:
+{
+    mqttTest.mqttTestComp.mqtt -> mqttClient.mqtt
+}

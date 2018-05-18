@@ -1,0 +1,12 @@
+sources:
+{
+    mqttCli.c
+}
+
+requires:
+{
+    api:
+    {
+        /home/legato/Nhon/newMqttClient/mqtt.api
+    }
+}
