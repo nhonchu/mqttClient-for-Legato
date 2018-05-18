@@ -1,47 +1,42 @@
-sandboxed: false
 
 executables:
 {
-    mqttClient  = ( mqttClientComp )
-    config      = ( configComp )
-    connect     = ( connectComp )
-    disconnect  = ( disconnectComp )
-    send        = ( sendComp )
-    //receiver    = ( receiverComp )
+    mqttCmd = ( mqttCliComponent )
+    mqttMain = ( mqttMainComponent )
 }
 
-processes: 
+processes:
 {
-    envVars:
-    {
-        LE_LOG_LEVEL = DEBUG
-    }
-
     run:
     {
-        (mqttClient)
-        //(receiver)
+        (mqttMain)
+        (mqttCmd)
     }
+    faultAction: restart
 }
-
-start: manual
 
 bindings:
 {
-    mqttClient.mqttClientComp.le_data -> dataConnectionService.le_data
-    mqttClient.mqttClientComp.le_info -> modemService.le_info
-    //mqttClient.mqttClientComp.receiverApi -> receiver.receiverComp.receiverApi
-
-    config.configComp.mqttApi -> mqttClient.mqttClientComp.mqttApi
-    connect.connectComp.mqttApi -> mqttClient.mqttClientComp.mqttApi
-    disconnect.disconnectComp.mqttApi -> mqttClient.mqttClientComp.mqttApi
-    send.sendComp.mqttApi -> mqttClient.mqttClientComp.mqttApi
+    mqttCmd.mqttCliComponent.mqtt -> mqttMain.mqttMainComponent.mqtt
+    mqttMain.mqttMainComponent.le_data -> dataConnectionService.le_data
+    mqttMain.mqttMainComponent.le_info -> modemService.le_info
 }
 
-provides:
+bundles:
 {
-    api:
+    file:
     {
-        mqttClient.mqttClientComp.mqttApi
+        [rx] scripts/mqtt /scripts/
+        [rx] scripts/mqttService /scripts/
     }
 }
+
+extern:
+{
+    mqttMain.mqttMainComponent.mqtt
+}
+
+start: manual
+sandboxed: false
+version: 2.0
+
