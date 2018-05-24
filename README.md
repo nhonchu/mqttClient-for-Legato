@@ -6,9 +6,10 @@ This MQTT-client enables you to easily send data to or receive data from Sierra 
 Components and sample have been updated and tested with WP76 module running Legato18.04.
 
 There are 3 components:
-	- mqttMain : encapsulates MQTT-Client interacting with a MQTT Broker (default is AirVantage). It exposes key features to other Legato apps over IPC (mqtt.api)
-	- mqttCmd  : this a MQTT Command Line Interface. You can easily connect to a broker, publish messages, or view received messages, using command line. This component is relying on mqttMain component.
-	- mqttTest : In case you want to develop a Legato application to pushing messages over MQTT, you can start with this sample app. It makes use of mqttMain component (mqtt.api) to achieve your mqtt features.
+
+- mqttMain : encapsulates MQTT-Client interacting with a MQTT Broker (default is AirVantage). It exposes key features to other Legato apps over IPC (mqtt.api)
+- mqttCmd  : this is a MQTT Command Line Interface. You can easily connect to a broker, publish messages, or view received messages, using command line. This component is relying on mqttMain component.
+- mqttTest : In case you want to develop a Legato application to pushing messages over MQTT, you can start with this sample app. It makes use of mqttMain component (mqtt.api) to achieve your mqtt features.
 
 
 
