@@ -14,7 +14,21 @@
  *    Allan Stockdill-Mander - initial API and implementation and/or initial documentation
  *******************************************************************************/
 
+/*
+ * Integration with a socket class encapsulating mbedtls
+ *
+ * Nhon Chu - March 2016 
+ *
+ */
+
+
 #include "MQTTLinux.h"
+
+#define USE_SOCKET_CLASS
+
+#ifdef USE_SOCKET_CLASS
+#include "SocketInterface.h"
+#endif
 
 char expired(Timer* timer)
 {
@@ -61,6 +75,14 @@ void InitTimer(Timer* timer)
 
 int linux_read(Network* n, unsigned char* buffer, int len, int timeout_ms)
 {
+#ifdef USE_SOCKET_CLASS
+	if (n->pSocketInstance)
+	{
+		SOCKET_setTimeout(n->pSocketInstance, timeout_ms);
+		return SOCKET_receive(n->pSocketInstance, (char *) buffer, len);
+	}
+	return -1;
+#else
 	struct timeval interval = {timeout_ms / 1000, (timeout_ms % 1000) * 1000};
 	if (interval.tv_sec < 0 || (interval.tv_sec == 0 && interval.tv_usec <= 0))
 	{
@@ -86,11 +108,20 @@ int linux_read(Network* n, unsigned char* buffer, int len, int timeout_ms)
 			bytes += rc;
 	}
 	return bytes;
+#endif
 }
 
 
 int linux_write(Network* n, unsigned char* buffer, int len, int timeout_ms)
 {
+#ifdef USE_SOCKET_CLASS
+	if (n->pSocketInstance)
+	{
+		SOCKET_setTimeout(n->pSocketInstance, timeout_ms);
+		return SOCKET_send(n->pSocketInstance, (char *)buffer, len);
+	}
+	return 0;
+#else
 	struct timeval tv;
 
 	tv.tv_sec = 0;  /* 30 Secs Timeout */
@@ -99,18 +130,27 @@ int linux_write(Network* n, unsigned char* buffer, int len, int timeout_ms)
 	setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 	int	rc = write(n->my_socket, buffer, len);
 	return rc;
+#endif
 }
 
 
 void linux_disconnect(Network* n)
 {
+#ifdef USE_SOCKET_CLASS
+	if (n->pSocketInstance)
+	{
+		SOCKET_close(n->pSocketInstance);
+	}
+#else
 	close(n->my_socket);
+#endif
 }
 
 
 void NewNetwork(Network* n)
 {
-	n->my_socket = 0;
+	//n->my_socket = 0;
+	n->pSocketInstance = NULL;
 	n->mqttread = linux_read;
 	n->mqttwrite = linux_write;
 	n->disconnect = linux_disconnect;
@@ -119,9 +159,22 @@ void NewNetwork(Network* n)
 
 int ConnectNetwork(Network* n, char* addr, int port)
 {
+	int rc = -1;
+
+#ifdef USE_SOCKET_CLASS
+	if (n->pSocketInstance)
+	{
+		SOCKET_close(n->pSocketInstance);
+	}
+	n->pSocketInstance = SOCKET_connect(addr, port);
+	if (n->pSocketInstance)
+	{
+		rc = 0;
+	}
+
+#else
 	int type = SOCK_STREAM;
 	struct sockaddr_in address;
-	int rc = -1;
 	sa_family_t family = AF_INET;
 	struct addrinfo *result = NULL;
 	struct addrinfo hints = {0, AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, 0, NULL, NULL, NULL};
@@ -162,6 +215,7 @@ int ConnectNetwork(Network* n, char* addr, int port)
 			rc = connect(n->my_socket, (struct sockaddr*)&address, sizeof(address));
 		}
 	}
+#endif
 
 	return rc;
 }
