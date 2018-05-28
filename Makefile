@@ -9,6 +9,7 @@ $(TARGETS):
 		  -i $(LEGATO_ROOT)/interfaces/modemServices \
 		  -i mqttMainComponent/inc \
 		  -i mqttMainComponent/inc/mqtt \
+		  -i mqttMainComponent/mbedtls/include \
 		  mqttClient.adef
 
 clean:

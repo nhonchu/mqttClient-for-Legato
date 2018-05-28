@@ -12,6 +12,11 @@ There are 3 components:
 - mqttTest : In case you want to develop a Legato application to pushing messages over MQTT, you can start with this sample app. It makes use of mqttMain component (mqtt.api) to achieve your mqtt features.
 
 
+TLS Support
+---------------------
+This new version now supports TLS, using Mbed TLS v2.9.0 (Apache 2.0 licensed version).
+mqttClient automatically enables TLS support if the port number is 8883.
+More Root CA certificates can be added into the certs directory.
 
 Build the application
 ---------------------
@@ -111,6 +116,13 @@ Close MQTT session
 app runProc mqttClient mqttCmd -- session stop
 	or
 app runProc mqttClient mqttCmd -- quit
+~~~
+
+MQTT over TLS
+-------------
+~~~
+app runProc mqttClient mqttCmd -- config set port 8883
+app runProc mqttClient mqttCmd -- session start
 ~~~
 
 
