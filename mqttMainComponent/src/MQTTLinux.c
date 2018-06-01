@@ -78,6 +78,11 @@ int linux_read(Network* n, unsigned char* buffer, int len, int timeout_ms)
 #ifdef USE_SOCKET_CLASS
 	if (n->pSocketInstance)
 	{
+		if (timeout_ms <= 0)
+		{
+			timeout_ms = 500;	//avoid blocking read
+		}
+
 		SOCKET_setTimeout(n->pSocketInstance, timeout_ms);
 		return SOCKET_receive(n->pSocketInstance, (char *) buffer, len);
 	}
