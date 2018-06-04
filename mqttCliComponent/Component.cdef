@@ -7,6 +7,6 @@ requires:
 {
     api:
     {
-        /home/legato/Nhon/newMqttClient/mqtt.api
+        mqtt.api
     }
 }
