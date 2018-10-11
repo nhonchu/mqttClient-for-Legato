@@ -1,0 +1,9 @@
+USETYPES le_limit.api;
+
+
+FUNCTION ExecuteCommand
+(
+	string 	userCommand[le_limit.MAX_PATH_LEN] IN,       ///< dataPath
+	int32	retCode OUT,
+	string  response[256] OUT
+);

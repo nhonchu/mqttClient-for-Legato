@@ -1,0 +1,29 @@
+
+executables:
+{
+    mqttClient = ( mqttClientApiComponent )
+}
+
+processes:
+{
+    run:
+    {
+        (mqttClient)
+    }
+    faultAction: restart
+}
+
+bindings:
+{
+    mqttClient.mqttClientApiComponent.le_info -> modemService.le_info
+}
+
+extern:
+{
+    mqttClient.mqttClientApiComponent.mqttClient
+}
+
+start: auto
+sandboxed: false
+version: 5.0
+

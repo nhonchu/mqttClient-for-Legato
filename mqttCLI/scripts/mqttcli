@@ -1,0 +1,4 @@
+#!/bin/sh
+
+app runProc mqttCLI mqttMain
+

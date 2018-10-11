@@ -1,0 +1,14 @@
+#!/bin/sh
+
+app runProc mqttGoogleCLI gmqttCmd -- "$@"
+
+
+
+
+
+
+
+
+
+
+
