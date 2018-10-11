@@ -1,0 +1,27 @@
+sandboxed: false
+
+executables:
+{
+    mqttClientSample  = ( mqttApiSampleComponent )
+}
+
+processes: 
+{
+    envVars:
+    {
+        LE_LOG_LEVEL = DEBUG
+    }
+
+    run:
+    {
+        (mqttClientSample)
+    }
+}
+
+start: manual
+
+bindings:
+{
+    mqttClientSample.mqttApiSampleComponent.mqttClient -> mqttClient.mqttClient
+    mqttClientSample.mqttApiSampleComponent.le_data -> dataConnectionService.le_data
+}

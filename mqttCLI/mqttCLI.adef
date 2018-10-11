@@ -1,0 +1,39 @@
+
+executables:
+{
+    mqttCmd = ( mqttCliComponent )
+    mqttMain = ( mqttCliSvrComponent )
+}
+
+processes:
+{
+    run:
+    {
+        (mqttMain)
+        (mqttCmd)
+    }
+    faultAction: restart
+}
+
+bindings:
+{
+    mqttMain.mqttCliSvrComponent.mqttClient -> mqttClient.mqttClient
+    mqttCmd.mqttCliComponent.mqttCliSvr -> mqttMain.mqttCliSvrComponent.mqttCliSvr
+    mqttMain.mqttCliSvrComponent.le_data -> dataConnectionService.le_data
+}
+
+bundles:
+{
+    file:
+    {
+        [rx] scripts/mqtt /scripts/
+        [rx] scripts/mqttcli /scripts/
+    }
+}
+
+
+
+start: manual
+sandboxed: false
+version: 2.0
+

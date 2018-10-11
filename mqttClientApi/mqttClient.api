@@ -1,0 +1,219 @@
+USETYPES le_limit.api;
+
+
+REFERENCE Instance;
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Get default MQTT config (if mqttClientRef is invalid), otherwise returns config of the given mqttClientRef
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t GetConfig
+(
+	Instance		mqttClientRef		IN,		//if NULL, then default config is returned
+	string			brokerUrl[256]		OUT,
+	int32			portNumber			OUT,
+	int32			useTLS				OUT,
+	string			deviceId[256]		OUT,
+	string			secret[512]			OUT,
+	int32			keepAlive			OUT,
+	int32			qoS					OUT
+);
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Create a MQTT instance, returns mqttClientRef (to be used in all subsequent calls)
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION Instance Create
+(
+	string			brokerUrl[256]		IN,
+	int32			portNumber			IN,
+	int32			useTLS				IN,
+	string			deviceId[256]		IN,
+	string			secret[512]			IN,
+	int32			keepAlive			IN,
+	int32			qoS					IN
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Delete a MQTT instance
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t Delete
+(
+	Instance		mqttClientRef		IN
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Start a MQTT session
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t StartSession
+(
+	Instance		mqttClientRef		IN
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Stop MQTT session
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t StopSession
+(
+	Instance		mqttClientRef		IN
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Get MQTT session status
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION bool IsConnected
+(
+	Instance		mqttClientRef		IN
+);
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Publish {"key" : "value"} to the specified topic
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t PublishKeyValue
+(
+	Instance		mqttClientRef		IN,
+	string			key[128]			IN,
+	string			value[256]			IN,
+	string			topicName[128]		IN
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Publish raw data to the specified topic
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t Publish
+(
+	Instance		mqttClientRef		IN,
+	string			data[256]			IN,
+	int32			dataLen				IN,
+	string			topicName[128]		IN
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Subscribe to the specified topic
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t Subscribe
+(
+	Instance		mqttClientRef		IN,
+	string			topicName[128]		IN
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Unsubscribe to the specified topic
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t Unsubscribe
+(
+	Instance		mqttClientRef		IN,
+	string			topicName[128]		IN
+);
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Process Event - should be calling this function on a regular basis
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t ProcessEvent
+(
+	Instance		mqttClientRef		IN
+);
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Handler for Incoming message
+ */
+//--------------------------------------------------------------------------------------------------
+HANDLER IncomingMessageHandler
+(
+	string			topicName[128]			IN,  ///< Name of the subscribed topic
+	string			key[128]				IN,  ///< Key Name of the data
+	string			value[128]				IN,  ///< Value of the data
+	string			timestamp[16]			IN   ///< Timestamp of the data
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * This event provides information on the incoming MQTT message
+ */
+//--------------------------------------------------------------------------------------------------
+EVENT IncomingMessage
+(
+	Instance					mqttClientRef			IN,
+	IncomingMessageHandler		handler
+);
+
+
+//--------------------------------------------------------------------------------------------------
+//	Below are AirVantage specific APIs
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Publish {"key" : "value"} to the AirVantage specific topic
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t AvPublish
+(
+	Instance		mqttClientRef		IN,
+	string			key[128]			IN,
+	string			value[256]			IN
+);
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Ack a command to AirVantage
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t AvAck
+(
+	Instance		mqttClientRef		IN,
+	string			uid[128]			IN,
+	int32			errorCode			IN,
+	string			message[256]		IN
+);
+//--------------------------------------------------------------------------------------------------
+/**
+ * Handler for AirVantage Software Install Over the Air Command
+ */
+//--------------------------------------------------------------------------------------------------
+HANDLER AvSoftwareInstallHandler
+(
+	string			uid[128]			IN,  ///< AV operation uid
+	string			type[128]			IN,  ///< SOTA type
+	string			revision[128]		IN,  ///< SW revision
+	string			url[256]			IN,	 ///< url to download the software package
+	string			timestamp[16]		IN   ///< Timestamp
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * This event provides information on the incoming MQTT message
+ */
+//--------------------------------------------------------------------------------------------------
+EVENT AvSoftwareInstall
+(
+	Instance					mqttClientRef			IN,
+	AvSoftwareInstallHandler	handler
+);

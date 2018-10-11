@@ -1,0 +1,39 @@
+
+executables:
+{
+    gmqttCmd = ( mqttCliComponent )
+    gmqttMain = ( mqttCliSvrComponent )
+}
+
+processes:
+{
+    run:
+    {
+        (gmqttMain)
+        (gmqttCmd)
+    }
+    faultAction: restart
+}
+
+bindings:
+{
+    gmqttMain.mqttCliSvrComponent.mqttClient -> mqttClient.mqttClient
+    gmqttCmd.mqttCliComponent.mqttGoogleCliSvr -> gmqttMain.mqttCliSvrComponent.mqttGoogleCliSvr
+    gmqttMain.mqttCliSvrComponent.le_data -> dataConnectionService.le_data
+}
+
+bundles:
+{
+    file:
+    {
+        [rx] scripts/gmqtt /scripts/
+        [rx] scripts/gmqttcli /scripts/
+    }
+}
+
+
+
+start: manual
+sandboxed: false
+version: 2.0
+

@@ -1,0 +1,13 @@
+sources:
+{
+    mqttCli.c
+}
+
+requires:
+{
+    api:
+    {
+        //${MQTT_CLI_ROOT}/mqttCliSvr.api
+        mqttCliSvr.api
+    }
+}
