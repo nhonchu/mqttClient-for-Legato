@@ -88,9 +88,9 @@ __mqttCLI__ & __mqttGoogleCLI__ both implement a CLI. This interface is triggere
 
 Once paths are defined, executing __mqtt__ (mqttCLI app supporting generic MQTT brokers) & __gmqtt__ (mqttGoogleCLI app supporting Google MQTT broker only) commands will look like below:
 
-![mqttCLI](mqtt_cli.jpg "mqttCLI")
+![mqttCLI](picts/mqtt_cli.jpg "mqttCLI")
 
-![mqttGoogleCLI](mqttGoogle_cli.jpg "mqttGoogleCLI")
+![mqttGoogleCLI](picts/mqttGoogle_cli.jpg "mqttGoogleCLI")
 
 Create a system in AirVantage
 -----------------------------------------
@@ -149,9 +149,9 @@ Before doing these tests, make sure the systems have been created in AirVantage 
 
     The default MQTT configuration is AirVantage server, the clientId is automatically set to module's serial number. Therefore starting a connection with AirVantage is straightforward, as shown below:
 
-    ![mqttCLI_AV](cli_av.jpg "Testing mqttCLI with AirVantage")
-    ![mqttCLI_AV](cli_av_tls.jpg "TLS is activated by default")
-    ![mqttCLI_AV](cli_av2.jpg "Data exchange with AirVantage")
+    ![mqttCLI_AV](picts/cli_av.jpg "Testing mqttCLI with AirVantage")
+    ![mqttCLI_AV](picts/cli_av_tls.jpg "TLS is activated by default")
+    ![mqttCLI_AV](picts/cli_av2.jpg "Data exchange with AirVantage")
 
     Custom Commands (turn on light & message) sent from AirVantage can be viewed with "mqtt queued" command.
 
@@ -165,7 +165,7 @@ Before doing these tests, make sure the systems have been created in AirVantage 
 
     Device 2 : We then emulate a second device (setting a different serial number) connecting AirVantage using mqttCLI. When publishing data to "legatoApp" topic, this data is forwarded to the above device (mqttClientSample app).
 
-     ![mqttCLI_AV](device2device.jpg "Device to Device communication on AirVantage")
+     ![mqttCLI_AV](picts/device2device.jpg "Device to Device communication on AirVantage")
 
     Using the topic approach, one-to-many communication can be achieved with AirVantage using MQTT protocol.
 
@@ -179,15 +179,15 @@ Device 1 : mqttClientSample app (clientId is default to module's serial number) 
 
 Device 2 : Let's simulate a second device using command line app (mqttCLI). Change the broker to iot.eclipse.org and clientId to a different serial number. When connected to eclipse server, issue "mqtt sub" to subscribe to topic "LegatoMqttClient", data published by mqttClientSample app will be received here, use "mqtt queued" to view them. Let's check that data {turnOn:light} sent to "legatoApp" topic will be forward to the other device (mqttClientSample app) consuming the same topic. 
 
-![mqttCLI_AV](device2device_topics.jpg "Device to Device communication using topics")
+![mqttCLI_AV](picts/device2device_topics.jpg "Device to Device communication using topics")
 
 Device1 sends data points ({"count" : count}) to Device2 (via MQTT broker), and receives {turnOn:light} from Device2 :
 
-![mqttCLI_AV](device2device_device1.jpg "Device 1")
+![mqttCLI_AV](picts/device2device_device1.jpg "Device 1")
 
 Device2 receives data point from Device1 ({"count" : "7"}...) and publishes {turnOn:light} to Device1 :
 
-![mqttCLI_AV](device2device_device2.jpg "Device 2")
+![mqttCLI_AV](picts/device2device_device2.jpg "Device 2")
 
 Testing on Google Cloud Platform's MQTT bridge
 -----------------------------------------
@@ -204,13 +204,13 @@ openssl rsa -in rsa_private.pem -pubout -out rsa_public.pem
 
 Use gmqtt commands (mqttGoogleCLI app) to configure the connection, point the rsaPrivateKey setting to the generated rsa_private.pem, start the session and send data
 
-![mqttCLI_AV](device-to-gCloud1.jpg "mqttGoogleCLI")
+![mqttCLI_AV](picts/device-to-gCloud1.jpg "mqttGoogleCLI")
 
 Use Google Cloud Shell to verify that the data published by the device has arrived in Google Clooud:
-![mqttCLI_AV](device-to-gCloud2.jpg "data actually sent to Google Cloud")
+![mqttCLI_AV](picts/device-to-gCloud2.jpg "data actually sent to Google Cloud")
 
 In the Google cloud console, you can send data to your device, use gmqtt queued command on the device to retrieve it (see above capture)
-![mqttCLI_AV](gCloud-to-device.jpg "Sending data from gCloud to device")
+![mqttCLI_AV](picts/gCloud-to-device.jpg "Sending data from gCloud to device")
 
 
 Using MQTT-Client within your Legato app
