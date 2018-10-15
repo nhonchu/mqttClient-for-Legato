@@ -211,7 +211,7 @@ Use Google Cloud Shell to verify that the data published by the device has arriv
 ![mqttCLI_AV](picts/device-to-gCloud2.jpg "data actually sent to Google Cloud")
 
 In the Google cloud console, you can send data to your device, use gmqtt queued command on the device to retrieve it (see above capture)
-![mqttCLI_AV](picts/gCloud-to-device.jpg "Sending data from gCloud to device")
+![mqttCLI_AV](picts/gcloud-to-device.jpg "Sending data from gCloud to device")
 
 
 Using MQTT-Client within your Legato app
