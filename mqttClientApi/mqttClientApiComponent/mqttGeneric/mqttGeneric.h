@@ -57,6 +57,7 @@ typedef struct
     int     serverPort;
     int     useTLS;
     char    deviceId[SIZE_DEVICE_ID];
+    char    username[128];
     char    secret[512];
     int     keepAlive;
     int     qoS;

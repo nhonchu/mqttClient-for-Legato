@@ -38,6 +38,7 @@ char                                 _broker[] = "mqtt.googleapis.com";
 int32_t                              _portNumber = 8883;
 int32_t                              _useTLS = 1;
 char                                 _deviceId[256] = {0};
+char                                 _username[128] = {0};
 char                                 _secret[512] = {0};
 int32_t                              _keepAlive = 30;
 int32_t                              _qoS = 0;
@@ -269,7 +270,7 @@ static void Connect
         if (strlen(_secret) > 0)
         {
             LE_INFO("Create new MQTT instance");
-            _cliMqttRef = mqttClient_Create(_broker, _portNumber, _useTLS, _deviceId, _secret, _keepAlive, _qoS);
+            _cliMqttRef = mqttClient_Create(_broker, _portNumber, _useTLS, _deviceId, _username, _secret, _keepAlive, _qoS);
 
             mqttClient_AddIncomingMessageHandler(_cliMqttRef, OnIncomingMessage, NULL);
         }       

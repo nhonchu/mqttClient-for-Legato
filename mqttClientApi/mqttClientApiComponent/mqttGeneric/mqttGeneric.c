@@ -50,6 +50,7 @@
 #define		DEFAULT_USE_TLS				0
 #define		DEFAULT_YIELD_TIMEOUT		1000	//allow 1 second for checking incoming packet & sending keep-alive
 #define		DEFAULT_DEVICE_NAME			"mqttGeneric"
+#define		DEFAULT_USER_NAME			"username"
 #define		DEFAULT_SECRET				"noSecret"
 
 #define		USER_DATA_INDEX				0
@@ -60,6 +61,7 @@ void mqtt_GetDefaultConfig(mqtt_config_t* mqttConfig)
     mqttConfig->serverPort = DEFAULT_PORT;
     mqttConfig->useTLS = DEFAULT_USE_TLS;
     strcpy(mqttConfig->deviceId, DEFAULT_DEVICE_NAME);
+    strcpy(mqttConfig->username, DEFAULT_USER_NAME);
     strcpy(mqttConfig->secret, DEFAULT_SECRET);
     mqttConfig->keepAlive = DEFAULT_KEEP_ALIVE;
     mqttConfig->qoS = DEFAULT_QOS;
@@ -237,11 +239,15 @@ int mqtt_StartSession(mqtt_instance_st * mqttObject)
 		mqttObject->data.willFlag = 0;
 		mqttObject->data.MQTTVersion = MQTT_VERSION;
 		mqttObject->data.clientID.cstring = mqttObject->mqttConfig.deviceId;
-		mqttObject->data.username.cstring = mqttObject->mqttConfig.deviceId;
+		mqttObject->data.username.cstring = mqttObject->mqttConfig.username;
 		mqttObject->data.password.cstring = mqttObject->mqttConfig.secret;
 
 		mqttObject->data.keepAliveInterval = mqttObject->mqttConfig.keepAlive;
 		mqttObject->data.cleansession = 1;
+
+		fprintf(stdout, "  clientId : %s\n", mqttObject->mqttConfig.deviceId);
+		fprintf(stdout, "  username : %s\n", mqttObject->mqttConfig.username);
+
 		fprintf(stdout, "Attempting (%d/%d) to connect to tcp://%s:%d... ", nRetry+1, nMaxRetry, mqttObject->mqttConfig.serverUrl, mqttObject->mqttConfig.serverPort);
 
 		fflush(stdout);
@@ -265,7 +271,7 @@ int mqtt_StartSession(mqtt_instance_st * mqttObject)
 
 	if (rc != SUCCESS)
 	{
-		fprintf(stdout, "Failed to connect to AirVantage server\n");
+		fprintf(stdout, "Failed to connect to %s\n", mqttObject->mqttConfig.serverUrl);
 		fflush(stdout);
 	}
 

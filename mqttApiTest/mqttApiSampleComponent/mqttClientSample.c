@@ -28,8 +28,9 @@ le_data_ConnectionStateHandlerRef_t  _DataConnectionStateHandlerRef = NULL;
 char                                 _broker[128] = {0};
 int32_t                              _portNumber = 8883;
 int32_t                              _useTLS = 1;
-char                                 _deviceId[] = "legatoMqttClient1234";
-char                                 _secret[] = "mySecret";
+char                                 _deviceId[128] = {0};
+char                                 _username[128] = {0};
+char                                 _secret[128] = {0};
 int32_t                              _keepAlive;
 int32_t                              _qoS;
 
@@ -180,7 +181,7 @@ static void DcsStateHandler
 
             mqttClient_Delete(_cliMqttRef);
 
-            _cliMqttRef = mqttClient_Create("iot.eclipse.org", 8883, 1, _deviceId, _secret, 30, 0);
+            _cliMqttRef = mqttClient_Create("iot.eclipse.org", 8883, 1, _deviceId, _username, _secret, 30, 0);
 
             if (LE_OK == mqttClient_StartSession(_cliMqttRef))
             {
@@ -218,10 +219,10 @@ static void Connect
     {
         //dat aconnection might be already exists, so it is important to create the MQTT instance first
         //Get default config, default is AirVantage server
-        mqttClient_GetConfig(NULL, _broker, sizeof(_broker), &_portNumber, &_useTLS, _deviceId, sizeof(_deviceId), _secret, sizeof(_secret), &_keepAlive, &_qoS);
+        mqttClient_GetConfig(NULL, _broker, sizeof(_broker), &_portNumber, &_useTLS, _deviceId, sizeof(_deviceId), _username, sizeof(_username),_secret, sizeof(_secret), &_keepAlive, &_qoS);
 
         LE_INFO("Create MQTT instance");
-        _cliMqttRef = mqttClient_Create(_broker, _portNumber, _useTLS, _deviceId, _secret, _keepAlive, _qoS);
+        _cliMqttRef = mqttClient_Create(_broker, _portNumber, _useTLS, _deviceId, _username, _secret, _keepAlive, _qoS);
     }
 
     // register handler for data connection state change

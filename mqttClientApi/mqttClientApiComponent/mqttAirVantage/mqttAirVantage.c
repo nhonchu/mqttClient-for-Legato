@@ -87,9 +87,21 @@ void mqtt_avGetDefaultConfig(mqtt_config_t* mqttConfig)
     mqttConfig->serverPort = PORT_AIRVANTAGE_SECURE;
     mqttConfig->useTLS = 1;
     strcpy(mqttConfig->deviceId, "");
+    strcpy(mqttConfig->username, "");
     strcpy(mqttConfig->secret, "sierra");
     mqttConfig->keepAlive = AV_MQTT_KEEP_ALIVE;
     mqttConfig->qoS = AV_MQTT_QOS;
+}
+
+//-------------------------------------------------------------------------------------------------------
+int mqtt_avIsAirVantageUrl(const char * url)
+{
+	if (strcmp(URL_AIRVANTAGE_SERVER, url) == 0)
+	{
+		return 1;
+	}
+
+	return 0;
 }
 
 //-------------------------------------------------------------------------------------------------------

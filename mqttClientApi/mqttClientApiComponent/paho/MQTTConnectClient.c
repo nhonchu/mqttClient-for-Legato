@@ -138,10 +138,12 @@ int MQTTDeserialize_connack(unsigned char* sessionPresent, unsigned char* connac
 	int mylen;
 	MQTTConnackFlags flags = {0};
 
+   
 	FUNC_ENTRY;
 	header.byte = readChar(&curdata);
 	if (header.bits.type != CONNACK)
 	{
+		fprintf(stdout, "Connack : wrong type\n");
 		goto exit;
 	}
 
@@ -149,6 +151,7 @@ int MQTTDeserialize_connack(unsigned char* sessionPresent, unsigned char* connac
 	enddata = curdata + mylen;
 	if (enddata - curdata < 2)
 	{
+		fprintf(stdout, "Connack : wrong remaining length\n");
 		goto exit;
 	}
 
@@ -156,9 +159,17 @@ int MQTTDeserialize_connack(unsigned char* sessionPresent, unsigned char* connac
 	*sessionPresent = flags.bits.sessionpresent;
 	*connack_rc = readChar(&curdata);
 
+	if (*connack_rc != 0)
+	{
+		fprintf(stdout, "Connack : connack_rc = %d", *connack_rc);
+	}
+
 	rc = 1;
 exit:
 	FUNC_EXIT_RC(rc);
+
+	fflush(stdout);
+
 	return rc;
 }
 

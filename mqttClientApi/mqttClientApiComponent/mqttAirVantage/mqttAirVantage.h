@@ -51,6 +51,7 @@
 void mqtt_avGetDefaultConfig(mqtt_config_t* mqttConfig);
 
 int mqtt_avIsAirVantageBroker(mqtt_instance_st * mqttObject);
+int mqtt_avIsAirVantageUrl(const char * url);
 
 void mqtt_avSetCommandHandler(mqtt_instance_st * mqttObject, incomingMessageHandler pHandler, void * pUserContext);
 void mqtt_avSetSoftwareInstallRequestHandler(mqtt_instance_st * mqttObject, softwareInstallRequestHandler pHandler, void * pUserContext);

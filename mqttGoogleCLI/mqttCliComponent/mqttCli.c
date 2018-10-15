@@ -19,7 +19,7 @@ void PrintUsage()
             "\nGoogle Cloud Platform - Iot Core - MQTT client command line usage:\n"
             "\n"
             "    gmqtt config get - to display current config\n"
-            "    gmqtt config set projectId/location/registry/deviceId/rsaPrivateKey [newValue]\n"
+            "    gmqtt config set projectId/location/registry/deviceId/username/rsaPrivateKey [newValue]\n"
             "\n"
             "    gmqtt session start  - start connection\n"
             "    gmqtt session stop   - close connection\n"
