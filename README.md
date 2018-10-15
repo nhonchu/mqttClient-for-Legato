@@ -7,6 +7,7 @@ The following brokers have been tested :
 - Sierra Wireless AirVantage server (eu.airvantage.net)
 - Eclipse Paho MQTT server (iot.eclipse.org)
 - Google Cloud Platform's MQTT bridge (mqtt.googleapis.com)
+- Orange Business Services Live Objects MQTT bridge
 
 There are 4 separate Legato applications in this package:
 

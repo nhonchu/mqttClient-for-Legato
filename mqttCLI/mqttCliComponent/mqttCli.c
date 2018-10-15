@@ -19,7 +19,7 @@ void PrintUsage()
             "\nMQTT client command line usage:\n"
             "\n"
             "    mqtt config get - to display current config\n"
-            "    mqtt config set broker/port/kalive/qos/clientId/password [newValue]\n"
+            "    mqtt config set broker/port/kalive/qos/clientId/username/password [newValue]\n"
             "\n"
             "    mqtt session start  - start connection\n"
             "    mqtt session stop   - close connection\n"

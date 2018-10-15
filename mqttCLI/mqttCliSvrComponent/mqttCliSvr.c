@@ -36,8 +36,9 @@ typedef struct
 char                        _broker[128] = {0};
 int32_t                     _portNumber;
 int32_t                     _useTLS;
-char                        _deviceId[32] = {0};
-char                        _secret[32] = {0};
+char                        _deviceId[256] = {0};
+char                        _username[128] = {0};
+char                        _secret[512] = {0};
 int32_t                     _keepAlive;
 int32_t                     _qoS;
 
@@ -85,13 +86,14 @@ void PrintMessage(char* szTrace, ...)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void GetConfig(char* config, size_t configLen)
 {
-    sprintf(config, "Current MQTT setting is :\n   broker : %s\n   port : %d\n   useTLS: %d\n   kalive : %d\n   qos : %d\n   clientId : %s\n   password : %s\n",
+    sprintf(config, "Current MQTT setting is :\n   broker : %s\n   port : %d\n   useTLS: %d\n   kalive : %d\n   qos : %d\n   clientId : %s\n   username : %s\n   password : %s\n",
                                 _broker,
                                 _portNumber,
                                 _useTLS,
                                 _keepAlive,
                                 _qoS,
                                 _deviceId,
+                                _username,
                                 _secret);
 }
 
@@ -146,7 +148,7 @@ static void Connect
     if (_cliMqttRef == NULL)
     {   //create MQTT instance first, data connection might already exists
         LE_INFO("Create new MQTT instance");
-        _cliMqttRef = mqttClient_Create(_broker, _portNumber, _useTLS, _deviceId, _secret, _keepAlive, _qoS);
+        _cliMqttRef = mqttClient_Create(_broker, _portNumber, _useTLS, _deviceId, _username, _secret, _keepAlive, _qoS);
         mqttClient_AddIncomingMessageHandler(_cliMqttRef, OnIncomingMessage, NULL);
         mqttClient_AddAvSoftwareInstallHandler(_cliMqttRef, OnSoftwareInstallRequest, NULL);
     }
@@ -414,6 +416,11 @@ le_result_t HandleConfigCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_LE
         else if (strcasecmp("clientId", argument[argIndex+1])==0)
         {
             strcpy(_deviceId, argument[argIndex+2]);
+            ret = LE_OK;
+        }
+        else if (strcasecmp("username", argument[argIndex+1])==0)
+        {
+            strcpy(_username, argument[argIndex+2]);
             ret = LE_OK;
         }
         else if (strcasecmp("password", argument[argIndex+1])==0)
@@ -831,7 +838,7 @@ COMPONENT_INIT
 {
     LE_INFO("---------- Launching MQTT Command Line Interface ----------");
 
-    mqttClient_GetConfig(NULL, _broker, sizeof(_broker), &_portNumber, &_useTLS, _deviceId, sizeof(_deviceId), _secret, sizeof(_secret), &_keepAlive, &_qoS);
+    mqttClient_GetConfig(NULL, _broker, sizeof(_broker), &_portNumber, &_useTLS, _deviceId, sizeof(_deviceId), _username, sizeof(_username), _secret, sizeof(_secret), &_keepAlive, &_qoS);
 
     char  config[256];
     GetConfig(config, sizeof(config)); //display config for CLI

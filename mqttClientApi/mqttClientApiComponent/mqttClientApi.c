@@ -424,6 +424,7 @@ mqttClient_InstanceRef_t mqttClient_Create
     int32_t       portNumber,
     int32_t       useTLS,
     const char*   deviceId,
+    const char*   username,
     const char*   secret,
     int32_t       keepAlive,
     int32_t       qoS
@@ -437,9 +438,19 @@ mqttClient_InstanceRef_t mqttClient_Create
     mqttClientPtr->mqttConfig.serverPort = portNumber;
     mqttClientPtr->mqttConfig.useTLS = useTLS;
     strcpy(mqttClientPtr->mqttConfig.deviceId, deviceId);
+    strcpy(mqttClientPtr->mqttConfig.username, username);
     strcpy(mqttClientPtr->mqttConfig.secret, secret);
     mqttClientPtr->mqttConfig.keepAlive = keepAlive;
     mqttClientPtr->mqttConfig.qoS = qoS;
+
+    if (mqtt_avIsAirVantageUrl(mqttClientPtr->mqttConfig.serverUrl))
+    {
+        if (strlen(mqttClientPtr->mqttConfig.username) == 0)
+        {
+            strcpy(mqttClientPtr->mqttConfig.username, mqttClientPtr->mqttConfig.deviceId);
+        }
+    }
+
 
     mqttClientPtr->mqttObject = mqtt_CreateInstance(&mqttClientPtr->mqttConfig);
 
@@ -485,6 +496,8 @@ le_result_t mqttClient_GetConfig
     int32_t*                        useTLS,
     char*                           deviceId,
     size_t                          deviceIdLen,
+    char*                           username,
+    size_t                          usernameLen,
     char*                           secret,
     size_t                          secretLen,
     int32_t*                        keepAlive,
@@ -508,6 +521,7 @@ le_result_t mqttClient_GetConfig
         *portNumber = mqttConfig.serverPort;
         *useTLS = mqttConfig.useTLS;
         strcpy(deviceId, mqttConfig.deviceId);
+        strcpy(username, mqttConfig.username);
         strcpy(secret, mqttConfig.secret);
         *keepAlive = mqttConfig.keepAlive;
         *qoS = mqttConfig.qoS;
@@ -518,6 +532,7 @@ le_result_t mqttClient_GetConfig
         *portNumber = mqttClientPtr->mqttConfig.serverPort;
         *useTLS = mqttClientPtr->mqttConfig.useTLS;
         strcpy(deviceId, mqttClientPtr->mqttConfig.deviceId);
+        strcpy(username, mqttClientPtr->mqttConfig.username);
         strcpy(secret, mqttClientPtr->mqttConfig.secret);
         *keepAlive = mqttClientPtr->mqttConfig.keepAlive;
         *qoS = mqttClientPtr->mqttConfig.qoS;

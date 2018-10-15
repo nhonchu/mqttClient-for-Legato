@@ -16,6 +16,7 @@ FUNCTION le_result_t GetConfig
 	int32			portNumber			OUT,
 	int32			useTLS				OUT,
 	string			deviceId[256]		OUT,
+	string			username[128]		OUT,
 	string			secret[512]			OUT,
 	int32			keepAlive			OUT,
 	int32			qoS					OUT
@@ -33,6 +34,7 @@ FUNCTION Instance Create
 	int32			portNumber			IN,
 	int32			useTLS				IN,
 	string			deviceId[256]		IN,
+	string			username[128]		IN,
 	string			secret[512]			IN,
 	int32			keepAlive			IN,
 	int32			qoS					IN
