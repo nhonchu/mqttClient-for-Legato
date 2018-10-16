@@ -7,7 +7,7 @@ The following brokers have been tested :
 - Sierra Wireless AirVantage server (eu.airvantage.net)
 - Eclipse Paho MQTT server (iot.eclipse.org)
 - Google Cloud Platform's MQTT bridge (mqtt.googleapis.com)
-- Orange Business Services Live Objects MQTT bridge
+- Orange Business Services Live Objects MQTT bridge (liveobjects.orange-business.com)
 
 There are 4 separate Legato applications in this package:
 
@@ -75,7 +75,7 @@ __mqttCLI__ & __mqttGoogleCLI__ both implement a CLI. This interface is triggere
     commands:
     {
         mqtt = mqttCLI:/scripts/mqtt
-        gmqtt = mqttGoogleCLI:/scripts/mqtt
+        gmqtt = mqttGoogleCLI:/scripts/gmqtt
     }
     ~~~
 
