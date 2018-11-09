@@ -1,6 +1,6 @@
-TARGETS := ar7 wp76xx ar86 wp85 localhost
+TARGETS := ar7 wp76xx wp77xx ar86 wp85 localhost
 
-MQTT_API_ROOT := ~/github-nhonchu/mqttClient-for-Legato/mqttClientApi
+CURDIR = $(shell pwd)
 
 .PHONY: all $(TARGETS)
 all: $(TARGETS)
@@ -10,7 +10,7 @@ $(TARGETS):
 	mkapp -v -t $@ \
 		  -i $(LEGATO_ROOT)/interfaces/dataConnectionService \
 		  -i $(LEGATO_ROOT)/interfaces/modemServices \
-		  -i $(MQTT_API_ROOT) \
+		  -i $(CURDIR)/../mqttClientApi \
 		  mqttClientSample.adef
 
 clean:

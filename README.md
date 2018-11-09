@@ -29,7 +29,6 @@ __TLS is activated by default__.
 
 Building and Installing applications
 ---------------------
-Modify the path in corresponding Makefile if necessary.
 
 - __mqttClient__ API - this application __must__ be built and installed on target
 
