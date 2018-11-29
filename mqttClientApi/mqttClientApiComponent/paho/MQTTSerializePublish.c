@@ -57,13 +57,27 @@ int MQTTSerialize_publish(unsigned char* buf, int buflen, unsigned char dup, int
 	unsigned char *ptr = buf;
 	MQTTHeader header = {0};
 	int rem_len = 0;
+	int pack_len = 0;
 	int rc = 0;
 
 	FUNC_ENTRY;
-	if (MQTTPacket_len(rem_len = MQTTSerialize_publishLength(qos, topicName, payloadlen)) > buflen)
+
+	rem_len = MQTTSerialize_publishLength(qos, topicName, payloadlen);
+	
+	fprintf(stdout, "Remaining Len = %d\n", rem_len);
+
+	pack_len = MQTTPacket_len(rem_len);
+
+	fprintf(stdout, "Packet Len = %d\n", pack_len);
+
+	if (pack_len > buflen)
 	{
-		rc = MQTTPACKET_BUFFER_TOO_SHORT;
-		goto exit;
+		if (payload)
+		{
+			fprintf(stdout, "mqtt buffer too short\n");
+			rc = MQTTPACKET_BUFFER_TOO_SHORT;
+			goto exit;
+		}
 	}
 
 	header.bits.type = PUBLISH;
@@ -79,10 +93,16 @@ int MQTTSerialize_publish(unsigned char* buf, int buflen, unsigned char dup, int
 	if (qos > 0)
 		writeInt(&ptr, packetid);
 
-	memcpy(ptr, payload, payloadlen);
-	ptr += payloadlen;
+	if (payload)
+	{	//not using the outbound buffer, will be sent separately
+		memcpy(ptr, payload, payloadlen);
+		ptr += payloadlen;
+	}
 
 	rc = ptr - buf;
+
+	//fprintf(stdout, "ptr: %p - buf: %p - rc: %d\n", ptr, buf, rc);
+	//fflush(stdout);
 
 exit:
 	FUNC_EXIT_RC(rc);

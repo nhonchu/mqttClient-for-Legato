@@ -90,7 +90,7 @@ FUNCTION le_result_t PublishKeyValue
 (
 	Instance		mqttClientRef		IN,
 	string			key[128]			IN,
-	string			value[256]			IN,
+	string			value[1024]			IN,
 	string			topicName[128]		IN
 );
 
@@ -102,8 +102,19 @@ FUNCTION le_result_t PublishKeyValue
 FUNCTION le_result_t Publish
 (
 	Instance		mqttClientRef		IN,
-	string			data[256]			IN,
-	int32			dataLen				IN,
+	uint8			data[1024]			IN,
+	string			topicName[128]		IN
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Publish binary content of a giben filename
+ */
+//--------------------------------------------------------------------------------------------------
+FUNCTION le_result_t PublishFileContent
+(
+	Instance		mqttClientRef		IN,
+	string			filanem[128]		IN,
 	string			topicName[128]		IN
 );
 
@@ -150,7 +161,7 @@ HANDLER IncomingMessageHandler
 (
 	string			topicName[128]			IN,  ///< Name of the subscribed topic
 	string			key[128]				IN,  ///< Key Name of the data
-	string			value[128]				IN,  ///< Value of the data
+	string			value[1024]				IN,  ///< Value of the data
 	string			timestamp[16]			IN   ///< Timestamp of the data
 );
 

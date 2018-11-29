@@ -47,9 +47,10 @@
 #define MQTT_KEEPALIVE	"MqttKeepAlive"
 #define MQTT_QOS		"MqttQoS"
 
-#define 	MAX_PAYLOAD_SIZE			2048	//Default payload buffer size
+#define 	MAX_OUTBOUND_PAYLOAD_SIZE		256		//Default payload buffer size
+#define 	MAX_INBOUND_PAYLOAD_SIZE		1024	//Default payload buffer size
 
-#define		SIZE_DEVICE_ID				256
+#define		SIZE_DEVICE_ID					256
 
 typedef struct 
 {
@@ -71,8 +72,8 @@ typedef struct {
 	Network 				network;
 	Client 					mqttClient;
 	MQTTPacket_connectData	data;
-	unsigned char			mqttBuffer[MAX_PAYLOAD_SIZE];
-	unsigned char			mqttReadBuffer[MAX_PAYLOAD_SIZE];
+	unsigned char			mqttBuffer[MAX_OUTBOUND_PAYLOAD_SIZE];
+	unsigned char			mqttReadBuffer[MAX_INBOUND_PAYLOAD_SIZE];
 	void*					userCtxData[MAX_USER_DATA];
 } mqtt_instance_st;
 

@@ -497,7 +497,7 @@ le_result_t HandlePublishCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_L
         }
         else
         {
-            rc = mqttClient_Publish(_cliMqttRef, argument[argIndex+1], strlen(argument[argIndex+1]), argument[argIndex]);   
+            rc = mqttClient_Publish(_cliMqttRef, (uint8_t *) argument[argIndex+1], strlen(argument[argIndex+1]), argument[argIndex]);   
         }
 
         if (rc)
@@ -519,6 +519,38 @@ le_result_t HandlePublishCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_L
 
     return ret;
 }
+
+
+le_result_t HandlePublishFileCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_LENGTH], char * response, size_t responseSize)
+{
+    le_result_t     ret = LE_BAD_PARAMETER;
+
+    if (strlen(argument[argIndex]) > 0 && strlen(argument[argIndex+1]) > 0)
+    {
+        int rc;
+
+        rc = mqttClient_PublishFileContent(_cliMqttRef, argument[argIndex+1], argument[argIndex]);   
+
+        if (rc)
+        {
+            PrintMessage("Pub: failed to Publish data");
+            ret = LE_FAULT;
+        }
+        else
+        {
+            
+            PrintMessage("Pub : Publish OK");
+            ret = LE_OK;
+        }
+    }
+    else
+    {
+        PrintMessage("Pub : bad_parameter");
+    }
+
+    return ret;
+}
+
 
 le_result_t HandleSendCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_LENGTH], char * response, size_t responseSize)
 {
@@ -801,6 +833,10 @@ void mqttCliSvr_ExecuteCommand
         else if (strcasecmp("pub", argument[0])==0)
         {
             *returnCodePtr = HandlePublishCommand(1, argument, response, responseSize);
+        }
+        else if (strcasecmp("pubfile", argument[0])==0)
+        {
+            *returnCodePtr = HandlePublishFileCommand(1, argument, response, responseSize);
         }
         else if (strcasecmp("avSend", argument[0])==0)
         {

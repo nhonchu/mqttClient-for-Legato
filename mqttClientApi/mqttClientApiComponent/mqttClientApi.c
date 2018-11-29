@@ -276,8 +276,8 @@ le_result_t mqttClient_AvAck
 le_result_t mqttClient_Publish
 (
     mqttClient_InstanceRef_t    mqttClientRef,
-    const char *                data,
-    int32_t                     dataLen,
+    const uint8_t *             data,
+    size_t                      dataSize,
     const char *                topicName
 )
 {
@@ -285,7 +285,7 @@ le_result_t mqttClient_Publish
 
     if (mqttClientPtr != NULL && mqttClientPtr->mqttObject != NULL)
     {
-        int ret = mqtt_PublishData(mqttClientPtr->mqttObject, data, dataLen, topicName);
+        int ret = mqtt_PublishData(mqttClientPtr->mqttObject, (const char *) data, dataSize, topicName);
 
         if (0 == ret)
         {
@@ -346,6 +346,83 @@ le_result_t mqttClient_PublishKeyValue
     }
 
     return LE_FAULT;
+}
+
+//-------------------------------------------------------------------------
+uint8_t * readFile(const char * filename, long * lDataSize)
+{
+    FILE*           file = NULL;
+    uint8_t*        pFileBuffer = NULL;
+
+    *lDataSize = 0;
+
+    LE_INFO("Loading binary file %s...", filename);
+    file = fopen(filename, "r");
+    if (NULL == file)
+    {
+        LE_INFO("Cannot open file %s...", filename);
+        return NULL;
+    }
+
+    fseek(file, 0, SEEK_END);
+    *lDataSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    LE_INFO("allocating %ld bytes...", *lDataSize);
+    pFileBuffer = (uint8_t *) malloc(*lDataSize);
+
+    if (pFileBuffer)
+    {
+        memset(pFileBuffer, 0, *lDataSize);
+        fread(pFileBuffer, 1, *lDataSize, file);
+    }
+
+    fclose(file);
+    return pFileBuffer;
+}
+
+
+//-------------------------------------------------------------------------
+le_result_t mqttClient_PublishFileContent
+(
+    mqttClient_InstanceRef_t        mqttClientRef,
+    const char *                    filename,
+    const char *                    topicName
+)
+{
+    le_result_t ret = LE_FAULT;
+
+    GET_MQTT_OBJECT(mqttClientRef);
+
+    if (mqttClientPtr != NULL && mqttClientPtr->mqttObject != NULL)
+    {
+        bool noTopic = false;
+        if (topicName != NULL && strlen(topicName) == 0)
+        {
+            noTopic = true;
+        }
+        else if (topicName == NULL)
+        {
+            noTopic = true;
+        }
+
+        if (noTopic)
+        {
+            return ret;
+        }
+
+        
+        long     lDataSize = 0;
+        uint8_t* pData = readFile(filename, &lDataSize);
+        if (pData)
+        {
+            ret = mqttClient_Publish(mqttClientRef, pData, (size_t)lDataSize, topicName);
+
+            free(pData);
+        }
+    }
+
+    return ret;
 }
 
 //-------------------------------------------------------------------------

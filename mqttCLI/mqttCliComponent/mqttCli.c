@@ -30,6 +30,8 @@ void PrintUsage()
             "\n"
             "    mqtt pub <topicName> <key/data> [<value>] - publish data\n"
             "\n"
+            "    mqtt pubfile <topicName> <filename> - publish file content\n"
+            "\n"
             "    mqtt queued - display incoming message\n"
             "\n"
             "    mqtt avSend <dataPath> <value> - send data to AirVantage\n"
