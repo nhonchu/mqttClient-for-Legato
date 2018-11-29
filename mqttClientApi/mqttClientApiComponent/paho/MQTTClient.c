@@ -36,14 +36,51 @@ int sendPacket(Client* c, int length, Timer* timer)
     
     while (sent < length && !expired(timer))
     {
-        //LE_INFO("mqtt-sendPacket: %d", length);
-        rc = c->ipstack->mqttwrite(c->ipstack, &c->buf[sent], length, left_ms(timer));
+        //fprintf(stdout, "mqtt-sendPacket: %d - sent: %d", length-sent, sent);
+        //fflush(stdout);
+        rc = c->ipstack->mqttwrite(c->ipstack, &c->buf[sent], length-sent, left_ms(timer));
+        fprintf(stdout, "bytes sent: %d", rc);
+        fflush(stdout);
         if (rc < 0)  // there was an error writing the data
             break;
         sent += rc;
     }
     
-    //LE_INFO("mqtt-sendPacket: %d of %d", sent, length);
+    fprintf(stdout, "total bytes sent: %d of %d", sent, length);
+    fflush(stdout);
+
+    if (sent == length)
+    {
+        countdown(&c->ping_timer, c->keepAliveInterval); // record the fact that we have successfully sent the packet    
+        rc = SUCCESS;
+    }
+    else
+    {
+        rc = FAILURE;
+    }
+    return rc;
+}
+
+
+int sendPacket2(Client* c, unsigned char * payload, int length, Timer* timer)
+{
+    int rc = FAILURE, 
+        sent = 0;
+    
+    while (sent < length && !expired(timer))
+    {
+        //fprintf(stdout, "mqtt-sendPacket: %d - sent: %d", length-sent, sent);
+        //fflush(stdout);
+        rc = c->ipstack->mqttwrite(c->ipstack, payload+sent, length-sent, left_ms(timer));
+        fprintf(stdout, "bytes sent: %d", rc);
+        fflush(stdout);
+        if (rc < 0)  // there was an error writing the data
+            break;
+        sent += rc;
+    }
+    
+    fprintf(stdout, "total bytes sent: %d of %d", sent, length);
+    fflush(stdout);
 
     if (sent == length)
     {
@@ -557,6 +594,8 @@ int MQTTPublish(Client* c, const char* topicName, MQTTMessage* message)
     topic.cstring = (char *)topicName;
     int len = 0;
 
+    unsigned char*  payloadToSerialized = NULL; //message->payload
+
     InitTimer(&timer);
     countdown_ms(&timer, c->command_timeout_ms);
     
@@ -566,11 +605,41 @@ int MQTTPublish(Client* c, const char* topicName, MQTTMessage* message)
     if (message->qos == QOS1 || message->qos == QOS2)
         message->id = getNextPacketId(c);
     len = MQTTSerialize_publish(c->buf, c->buf_size, 0, message->qos, message->retained, message->id, 
-              topic, (unsigned char*)message->payload, message->payloadlen);
+              topic, payloadToSerialized, message->payloadlen);
+
+    //fprintf(stdout, "MQTTSerialize_publish returns : %d\n", len);
+    //fflush(stdout);
+
     if (len <= 0)
         goto exit;
+
+    if (payloadToSerialized == NULL)
+    {
+        fprintf(stdout, "Sending Publish header : %d bytes\n", len);
+        fflush(stdout);
+    }
+    else
+    {
+        fprintf(stdout, "Sending Publish : %d bytes\n", len);
+        fflush(stdout);
+    }
+
     if ((rc = sendPacket(c, len, &timer)) != SUCCESS) // send the subscribe packet
         goto exit; // there was a problem
+    
+    if (payloadToSerialized == NULL)   //send payload here separately, not serialized in c
+    {
+        unsigned int timeout = c->command_timeout_ms + c->command_timeout_ms * (message->payloadlen / 150000);
+
+        fprintf(stdout, "Now sending Publish payload : %d bytes, timeout= %u\n", message->payloadlen, timeout);
+        fflush(stdout);
+
+        InitTimer(&timer);
+        countdown_ms(&timer, timeout);
+        if ((rc = sendPacket2(c, message->payload, message->payloadlen, &timer)) != SUCCESS) // send the subscribe packet
+            goto exit; // there was a problem
+    }
+
     if (message->qos == QOS1)
     {
         if (waitfor(c, PUBACK, &timer) == PUBACK)

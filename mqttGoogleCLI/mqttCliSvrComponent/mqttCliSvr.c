@@ -605,7 +605,7 @@ le_result_t HandlePublishCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_L
 
     if (strlen(argument[argIndex]))
     {
-        int rc = mqttClient_Publish(_cliMqttRef, argument[argIndex], strlen(argument[argIndex]), _gPublishTopicName);
+        int rc = mqttClient_Publish(_cliMqttRef, (uint8_t *) argument[argIndex], strlen(argument[argIndex]), _gPublishTopicName);
 
         if (rc)
         {
