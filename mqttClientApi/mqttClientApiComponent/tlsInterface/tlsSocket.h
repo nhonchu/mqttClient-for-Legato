@@ -90,7 +90,7 @@ void*	tlsSocket_delete(void* socket);
 	\param port The host's port to connect to.
 	\return 0 on success, -1 on failure.
 	*/
-	int tlsSocket_connect(void* socket, const char* host, const int port);
+	int tlsSocket_connect(void* socket, const char* host, const int port, const char * rootCA, const char * certificate, const char * privateKey);
 
 	/** Close the TCP socket
 	*/

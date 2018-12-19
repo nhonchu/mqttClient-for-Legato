@@ -101,7 +101,28 @@ mqtt_instance_st * mqtt_CreateInstance(mqtt_config_t* mqttConfig)
 
 	memcpy(&mqttObject->data, &data, sizeof(MQTTPacket_connectData));
 
+	NewNetwork(&mqttObject->network, mqttObject->mqttConfig.useTLS);
+
 	return mqttObject;
+}
+
+//-------------------------------------------------------------------------------------------------------
+void mqtt_SetTls(mqtt_instance_st* mqttObject, const char* rootCAFile, const char* certificateFile, const char * privateKeyFile)
+{
+	if (rootCAFile && strlen(rootCAFile) > 0)
+	{
+		strcpy(mqttObject->mqttConfig.tlsRootCA, rootCAFile);
+	}
+
+	if (certificateFile && strlen(certificateFile) > 0)
+	{
+		strcpy(mqttObject->mqttConfig.tlsCertificate, certificateFile);
+	}
+
+	if (privateKeyFile && strlen(privateKeyFile) > 0)
+	{
+		strcpy(mqttObject->mqttConfig.tlsPrivateKey, privateKeyFile);
+	}
 }
 
 //-------------------------------------------------------------------------------------------------------
@@ -226,13 +247,13 @@ int mqtt_StartSession(mqtt_instance_st * mqttObject)
 	int				nRetry = 0;
 
 
-	NewNetwork(&mqttObject->network, mqttObject->mqttConfig.useTLS);
 	mqttObject->mqttClient.userCtxData = (void *) mqttObject;
 
 	for (nRetry=0; nRetry<nMaxRetry; nRetry++)
 	{
 		fprintf(stdout, "mqtt_StartSession... connecting...");
-		mqttObject->network.connect(&mqttObject->network, mqttObject->mqttConfig.serverUrl, mqttObject->mqttConfig.serverPort);
+		mqttObject->network.connect(&mqttObject->network, mqttObject->mqttConfig.serverUrl, mqttObject->mqttConfig.serverPort,
+										mqttObject->mqttConfig.tlsRootCA, mqttObject->mqttConfig.tlsCertificate, mqttObject->mqttConfig.tlsPrivateKey);
 
 		MQTTClient(&mqttObject->mqttClient, &mqttObject->network, TIMEOUT_MS, mqttObject->mqttBuffer, sizeof(mqttObject->mqttBuffer), mqttObject->mqttReadBuffer, sizeof(mqttObject->mqttReadBuffer));
 	 

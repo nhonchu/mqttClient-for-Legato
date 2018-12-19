@@ -54,7 +54,7 @@ struct Network
 	int (*mqttread) (Network*, unsigned char*, int, int);
 	int (*mqttwrite) (Network*, unsigned char*, int, int);
 	void (*disconnect) (Network*);
-	int (*connect)(Network*, char*, int);
+	int (*connect)(Network*, const char*, int, const char *, const char *, const char *);
 };
 
 int expired(Timer*);
@@ -68,7 +68,7 @@ void NewNetwork(Network*, int useTLS);
 
 int linux_read(Network*, unsigned char*, int, int);
 int linux_write(Network*, unsigned char*, int, int);
-int linux_connect(Network*, char*, int);
+int linux_connect(Network*, const char*, int, const char*, const char*, const char*);
 void linux_disconnect(Network*);
 
 #endif

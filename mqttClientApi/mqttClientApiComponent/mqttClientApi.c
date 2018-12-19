@@ -495,6 +495,27 @@ le_result_t mqttClient_StopSession
 }
 
 //-------------------------------------------------------------------------
+le_result_t mqttClient_SetTls
+(
+    mqttClient_InstanceRef_t    mqttClientRef,
+    const char*                 rootCAFile,
+    const char*                 certificateFile,
+    const char*                 privateKeyFile
+)
+{
+    GET_MQTT_OBJECT(mqttClientRef);
+
+    if (mqttClientPtr != NULL && mqttClientPtr->mqttObject != NULL)
+    {
+        mqtt_SetTls(mqttClientPtr->mqttObject, rootCAFile, certificateFile, privateKeyFile);
+
+        return LE_OK;
+    }
+
+    return LE_FAULT;
+}
+
+//-------------------------------------------------------------------------
 mqttClient_InstanceRef_t mqttClient_Create
 (
     const char*   brokerUrl,
