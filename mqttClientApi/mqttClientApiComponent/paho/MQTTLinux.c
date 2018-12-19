@@ -192,7 +192,7 @@ void NewNetwork(Network* n, int useTLS)
 }
 
 
-int linux_connect(Network* n, char* addr, int port)
+int linux_connect(Network* n, const char* addr, int port, const char * rootCA, const char * certificate, const char * privateKey)
 {
 	int rc = -1;
 
@@ -206,7 +206,7 @@ int linux_connect(Network* n, char* addr, int port)
 		}
 		n->tlsSocketObject = tlsSocket_create();
 		
-		rc = tlsSocket_connect(n->tlsSocketObject, addr, port);
+		rc = tlsSocket_connect(n->tlsSocketObject, addr, port, rootCA, certificate, privateKey);
 	}
 	else
 	{

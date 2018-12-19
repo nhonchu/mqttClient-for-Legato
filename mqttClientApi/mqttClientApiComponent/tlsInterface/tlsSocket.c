@@ -61,6 +61,8 @@ typedef struct {
 	mbedtls_ssl_context         ssl;
 	mbedtls_ssl_config          conf;
 	mbedtls_x509_crt            cacert;
+	mbedtls_x509_crt            clicert;
+	mbedtls_pk_context          pkey;
 	int							is_connected;
 } tlsSocket_st;
 
@@ -100,7 +102,7 @@ void *	tlsSocket_delete(void* sockObj)
 	return NULL;
 }
 
-int tlsSocket_connect(void* sockObj, const char* host, const int port)
+int tlsSocket_connect(void* sockObj, const char* host, const int port, const char * rootCA, const char* certificate, const char * privateKey)
 {
 	int 						ret;
 	uint32_t 					flags;
@@ -124,6 +126,9 @@ int tlsSocket_connect(void* sockObj, const char* host, const int port)
 	mbedtls_x509_crt_init( &socket->cacert );
 	mbedtls_ctr_drbg_init( &socket->ctr_drbg );
 
+	mbedtls_x509_crt_init( &socket->clicert );
+	mbedtls_pk_init( &socket->pkey );
+
 	fprintf(stdout,  "\n  . Seeding the random number generator..." );
 
 	mbedtls_entropy_init( &socket->entropy );
@@ -144,7 +149,12 @@ int tlsSocket_connect(void* sockObj, const char* host, const int port)
 	 */
 	fprintf(stdout,  "  . Loading the CA root certificate ..." );
 
-	if (strlen(socket->trustedCaFolderName) == 0)
+	if (rootCA && strlen(rootCA))
+	{
+		fprintf(stdout,  " %s", rootCA );
+		ret = mbedtls_x509_crt_parse_file(&socket->cacert, rootCA);
+	}
+	else if (strlen(socket->trustedCaFolderName) == 0)
 	{
 		ret = mbedtls_x509_crt_parse( &socket->cacert, (const unsigned char *) mbedtls_test_cas_pem, mbedtls_test_cas_pem_len );
 	}
@@ -181,6 +191,34 @@ int tlsSocket_connect(void* sockObj, const char* host, const int port)
 	}
 
 	fprintf(stdout,  " ok (%d skipped)\n", ret );
+
+	if (certificate && strlen(certificate))
+	{
+		fprintf(stdout,  "  . Loading the client certificate... %s", certificate);
+		ret = mbedtls_x509_crt_parse_file(&socket->clicert, certificate);
+		if(ret != 0) {
+			fprintf(stdout,  " failed\n  !  mbedtls_x509_crt_parse_file returned -0x%x while parsing device cert\n\n", -ret);
+			tlsSocket_get_error(socket, ret);
+			tlsSocket_free(socket);
+			return ret;
+		}
+		fprintf(stdout,  " ok\n" );
+	}
+
+	if (privateKey && strlen(privateKey))
+	{
+		fprintf(stdout,  "  . Loading the client private key... %s", privateKey);
+		ret = mbedtls_pk_parse_keyfile(&socket->pkey, privateKey, "");
+		if(ret != 0) {
+			fprintf(stdout,  " failed\n  !  mbedtls_pk_parse_keyfile returned -0x%x while parsing private key\n\n", -ret);
+			fprintf(stdout,  " path : %s ", privateKey);
+			tlsSocket_get_error(socket, ret);
+			tlsSocket_free(socket);
+			return ret;
+		}
+		fprintf(stdout,  " ok\n" );
+	}
+
 
 	/*
 	 * 1. Start the connection
@@ -223,6 +261,17 @@ int tlsSocket_connect(void* sockObj, const char* host, const int port)
 	mbedtls_ssl_conf_rng( &socket->conf, mbedtls_ctr_drbg_random, &socket->ctr_drbg );
 	mbedtls_ssl_conf_dbg( &socket->conf, my_debug, stdout );
 
+	if (certificate && strlen(certificate) && privateKey && strlen(privateKey))
+	{
+		if( (ret = mbedtls_ssl_conf_own_cert(&socket->conf, &socket->clicert, &socket->pkey)) != 0)
+		{
+			fprintf(stdout, " failed\n  ! mbedtls_ssl_conf_own_cert returned %d\n\n", ret);
+			tlsSocket_get_error(socket, ret);
+			tlsSocket_free(socket);
+			return ret;
+		}
+	}
+
 	if( ( ret = mbedtls_ssl_setup( &socket->ssl, &socket->conf ) ) != 0 )
 	{
 		fprintf(stdout,  " failed\n  ! mbedtls_ssl_setup returned %d\n\n", ret );
@@ -260,6 +309,8 @@ int tlsSocket_connect(void* sockObj, const char* host, const int port)
 	}
 
 	fprintf(stdout,  " ok\n" );
+
+	fprintf(stdout, "[ Protocol is %s ]\n[ Ciphersuite is %s ]\n", mbedtls_ssl_get_version(&socket->ssl), mbedtls_ssl_get_ciphersuite(&socket->ssl));
 
 	/*
 	 * 5. Verify the server certificate
@@ -476,6 +527,8 @@ void tlsSocket_free(void* sockObj)
 	{
 		mbedtls_net_free( &socket->server_fd );
 		mbedtls_x509_crt_free( &socket->cacert );
+		mbedtls_x509_crt_free( &socket->clicert );
+		mbedtls_pk_free( &socket->pkey );
 		mbedtls_ssl_free( &socket->ssl );
 		mbedtls_ssl_config_free( &socket->conf );
 		mbedtls_ctr_drbg_free( &socket->ctr_drbg );

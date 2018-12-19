@@ -42,6 +42,10 @@ char                        _secret[512] = {0};
 int32_t                     _keepAlive;
 int32_t                     _qoS;
 
+char                        _rootCA[128] = {0};
+char                        _certificate[128] = {0};
+char                        _privateKey[128] = {0};
+
 static le_data_RequestObjRef_t  _RequestRef = NULL;
 static le_data_ConnectionStateHandlerRef_t  _hDataConnectionState = NULL;
 
@@ -98,6 +102,15 @@ void GetConfig(char* config, size_t configLen)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+void GetTlsConfig(char* config, size_t configLen)
+{
+    sprintf(config, "Current TLS setting is :\n   rootCA : %s\n   Certificate : %s\n   PrivateKey: %s\n\n",
+                                _rootCA,
+                                _certificate,
+                                _privateKey);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 le_result_t       QueueIncomingMessage(const char* message)
 {
     ST_MQTT_INCOMING_MSG_T*    newNodePtr = NULL;
@@ -149,6 +162,7 @@ static void Connect
     {   //create MQTT instance first, data connection might already exists
         LE_INFO("Create new MQTT instance");
         _cliMqttRef = mqttClient_Create(_broker, _portNumber, _useTLS, _deviceId, _username, _secret, _keepAlive, _qoS);
+        mqttClient_SetTls(_cliMqttRef, (const char *)_rootCA, (const char *)_certificate, (const char *)_privateKey);
         mqttClient_AddIncomingMessageHandler(_cliMqttRef, OnIncomingMessage, NULL);
         mqttClient_AddAvSoftwareInstallHandler(_cliMqttRef, OnSoftwareInstallRequest, NULL);
     }
@@ -442,6 +456,57 @@ le_result_t HandleConfigCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_LE
 
     return ret;
 }
+
+//--------------------------------------------------------------------------------------------
+
+le_result_t HandleTlsCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_LENGTH], char* response, size_t responseSize)
+{
+    le_result_t  ret = LE_BAD_PARAMETER;
+
+    if (strlen(argument[argIndex]) == 0)
+    {
+        GetTlsConfig(response, responseSize);
+
+        return LE_OK;
+    }
+    else if (strcasecmp("get", argument[argIndex])==0)
+    {
+        GetTlsConfig(response, responseSize);
+
+        return LE_OK;
+    }
+    else if (strcasecmp("set", argument[argIndex])==0)
+    {
+        if (strcasecmp("rootca", argument[argIndex+1])==0)
+        {
+            strcpy(_rootCA, argument[argIndex+2]);
+            ret = LE_OK;
+        }
+        else if (strcasecmp("certificate", argument[argIndex+1])==0)
+        {
+            strcpy(_certificate, argument[argIndex+2]);
+            ret = LE_OK;
+        }
+        else if (strcasecmp("privatekey", argument[argIndex+1])==0)
+        {
+            strcpy(_privateKey, argument[argIndex+2]);
+            ret = LE_OK;
+        }
+        
+        if (LE_OK == ret)
+        {
+            PrintMessage("config: config changed");
+            GetTlsConfig(response, responseSize);
+        }
+        else
+        {
+            PrintMessage("config: failed to change TLS config");   
+        }
+    }
+
+    return ret;
+}
+
 
 
 le_result_t HandleSessionCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_LENGTH], char* response, size_t responseSize)
@@ -825,6 +890,10 @@ void mqttCliSvr_ExecuteCommand
         else if (strcasecmp("config", argument[0])==0)
         {
             *returnCodePtr = HandleConfigCommand(1, argument, response, responseSize);
+        }
+        else if (strcasecmp("tls", argument[0])==0)
+        {
+            *returnCodePtr = HandleTlsCommand(1, argument, response, responseSize);
         }
         else if (strcasecmp("session", argument[0])==0)
         {

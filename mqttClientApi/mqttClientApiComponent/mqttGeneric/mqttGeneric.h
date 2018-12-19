@@ -57,6 +57,10 @@ typedef struct
     char    serverUrl[256];
     int     serverPort;
     int     useTLS;
+    char    tlsRootCA[128];
+	char    tlsCertificate[128];
+	char    tlsPrivateKey[128];
+
     char    deviceId[SIZE_DEVICE_ID];
     char    username[128];
     char    secret[512];
@@ -90,6 +94,7 @@ typedef struct {
 void mqtt_GetDefaultConfig(mqtt_config_t* mqttConfig);
 
 mqtt_instance_st * mqtt_CreateInstance(mqtt_config_t* mqttConfig);
+void mqtt_SetTls(mqtt_instance_st* mqttObject, const char* rootCAFile, const char* certificateFile, const char * privateKeyFile);
 void mqtt_SetUserData(mqtt_instance_st* mqttObject, void * userCtxData, int index);
 void* mqtt_GetUserData(mqtt_instance_st* mqttObject, int index);
 mqtt_instance_st* mqtt_DeleteInstance(mqtt_instance_st* mqttObject);
