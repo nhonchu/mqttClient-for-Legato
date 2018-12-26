@@ -324,6 +324,7 @@ static void DcsStateHandler
         else
         {
             PrintMessage("Failed to start MQTT session");
+            mqttClient_StopSession(_cliMqttRef);
         }
     }
     else
@@ -434,13 +435,47 @@ le_result_t HandleConfigCommand(int argIndex, char argument[MAX_ARGS][MAX_ARG_LE
         }
         else if (strcasecmp("username", argument[argIndex+1])==0)
         {
+            LE_INFO("Set username to %s:%d", argument[argIndex+2], strlen(argument[argIndex+2]));
             strcpy(_username, argument[argIndex+2]);
             ret = LE_OK;
         }
         else if (strcasecmp("password", argument[argIndex+1])==0)
         {
+            LE_INFO("Set password to %s:%d", argument[argIndex+2], strlen(argument[argIndex+2]));
             strcpy(_secret, argument[argIndex+2]);
             ret = LE_OK;
+        }
+        else if (strcasecmp("passwordFile", argument[argIndex+1])==0)
+        {
+            LE_INFO("Set password file to %s:%d", argument[argIndex+2], strlen(argument[argIndex+2]));
+
+            {
+                FILE*           file = NULL;
+
+                long lDataSize = 0;
+
+                LE_INFO("Loading password from file %s...", argument[argIndex+2]);
+                file = fopen(argument[argIndex+2], "r");
+                if (NULL != file)
+                {
+                    fseek(file, 0, SEEK_END);
+                    lDataSize = ftell(file);
+                    fseek(file, 0, SEEK_SET);
+                    if (lDataSize <= sizeof(_secret))
+                    {
+                        memset(_secret, 0, sizeof(_secret));
+                        fread(_secret, 1, lDataSize, file);
+
+                        ret = LE_OK;
+                    }
+                    fclose(file);
+                }
+                else
+                {
+                    LE_INFO("Cannot open file %s...", argument[argIndex+2]);
+                }
+            }
+            
         }
         
         if (LE_OK == ret)
@@ -945,7 +980,7 @@ COMPONENT_INIT
 
     mqttClient_GetConfig(NULL, _broker, sizeof(_broker), &_portNumber, &_useTLS, _deviceId, sizeof(_deviceId), _username, sizeof(_username), _secret, sizeof(_secret), &_keepAlive, &_qoS);
 
-    char  config[256];
+    char  config[1024];
     GetConfig(config, sizeof(config)); //display config for CLI
     PrintMessage(config);
 
