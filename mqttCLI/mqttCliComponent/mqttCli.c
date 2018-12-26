@@ -19,7 +19,7 @@ void PrintUsage()
             "\nMQTT client command line usage:\n"
             "\n"
             "    mqtt config get - to display current config\n"
-            "    mqtt config set broker/port/kalive/qos/clientId/username/password [newValue]\n"
+            "    mqtt config set broker/port/kalive/qos/clientId/username/password/passwordFile [newValue]\n"
             "\n"
             "    mqtt tls get - to display current TLS settings\n"
             "    mqtt tls set rootca/cert/privatekey [newValue]\n"

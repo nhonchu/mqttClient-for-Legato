@@ -37,6 +37,12 @@ MQTT default configuration is set to AirVantage server, below commands are usual
     mqtt avsend <key> <value> 
     ~~~
 
+- View sub messages, if any
+
+    ~~~
+    mqtt queued
+    ~~~
+
 
 Eclipse Paho
 --------------
@@ -67,51 +73,10 @@ Eclipse Paho
     mqtt pubfile <topicName> <filename>
     ~~~
 
-
-Amazon AWS-IoT
---------------
-
-- Copy (scp) the certificates issued by Amazon to your target, and configure mqttClient's TLS as following example :
+- View sub messages, if any
 
     ~~~
-    mqtt tls set rootca /home/root/aws-iot/root-ca.pem
-    mqtt tls set certificate /home/root/aws-iot/cert.pem.crt
-    mqtt tls set privatekey /home/root/aws-iot/private.pem.key
-    ~~~
-
-    the command line tool will echo your setting, for instance:
-    ~~~
-    root@swi-mdm9x28-wp:~# mqtt tls set privatekey /home/root/aws-iot/private.pem.key 
-    Current TLS setting is :
-    rootCA : /home/root/aws-iot/root-ca.pem
-    Certificate : /home/root/aws-iot/cert.pem.crt
-    PrivateKey: /home/root/aws-iot/private.pem.key
-    ~~~
-
-
-- Set the MQTT broker endpoint as follow :
-
-    ~~~
-    mqtt config set broker <xyz>.iot.<us-east-2>.amazonaws.com
-    mqtt config set port 8883
-    mqtt config set clientid <xyz>
-    ~~~
-
-
-- Start the mqtt session with AWS-IoT, it is recommended to view the log in a different terminal using "logread -f"
-
-    ~~~
-    mqtt session start
-    ~~~
-
-
-- Subscribe to topic or Publish messages
-
-    ~~~
-    mqtt sub <topicName>
-
-    mqtt pub <topicName> <data>
-    mqtt pubfile <topicName> <filename>
+    mqtt queued
     ~~~
 
 
@@ -146,6 +111,106 @@ Orange Live Objects
     mqtt pubfile dev/data/raw/none <filename>
     ~~~
 
+- View sub messages, if any
+
+    ~~~
+    mqtt queued
+    ~~~
+
+
+
+Amazon AWS-IoT
+--------------
+
+- Copy (scp) the certificates issued (certificate for the device, private key) by Amazon to your target (public key is used by AWS-IoT, not used by the device for the connection), and configure mqttClient's TLS as following example :
+
+    ~~~
+    mqtt tls set certificate /home/root/aws-iot/cert.pem.crt
+    mqtt tls set privatekey /home/root/aws-iot/private.pem.key
+    ~~~
+
+    the command line tool will echo your setting, for instance:
+    ~~~
+    root@swi-mdm9x28-wp:~# mqtt tls set privatekey /home/root/aws-iot/private.pem.key 
+    Current TLS setting is :
+    rootCA :
+    Certificate : /home/root/aws-iot/cert.pem.crt
+    PrivateKey: /home/root/aws-iot/private.pem.key
+    ~~~
+
+    rootCA is provided in the certs directory
+
+
+- Set the MQTT broker endpoint as follow :
+
+    ~~~
+    mqtt config set broker <xyz>.iot.<us-east-2>.amazonaws.com
+    mqtt config set port 8883
+    mqtt config set clientid <xyz>
+    ~~~
+
+
+- Start the mqtt session with AWS-IoT, it is recommended to view the log in a different terminal using "logread -f"
+
+    ~~~
+    mqtt session start
+    ~~~
+
+
+- Subscribe to topic or Publish messages
+
+    ~~~
+    mqtt sub <topicName>
+
+    mqtt pub <topicName> <data>
+    mqtt pubfile <topicName> <filename>
+    ~~~
+
+- View sub messages, if any
+
+    ~~~
+    mqtt queued
+    ~~~
+
+
+
+Azure IoT Hub
+-------------
+
+- Configure Azure IoT connection parameters as follow :
+
+    ~~~
+    mqtt config set broker {iothubname}.azure-devices.net
+    mqtt config set port 8883
+    mqtt config set username {iothubname}.azure-devices.net/{deviceId}/api-version=2018-06-30
+    mqtt config set clientid {deviceId}
+    mqtt config set passwordFile <filename containing SAP token>
+    ~~~
+
+    SAP token can be generated with Azure Iot Hub toolkit.
+
+- Start the mqtt session with Azure, it is recommended to view the log in a different terminal using "logread -f"
+
+    ~~~
+    mqtt session start
+    ~~~
+
+
+- Subscribe & Publish messages
+
+    ~~~
+    mqtt sub devices/{deviceId}/messages/devicebound/#
+
+    mqtt pub devices/{defviceId}/messages/events/ {temperture=19.2}
+    ~~~
+
+- View sub messages, if any
+
+    ~~~
+    mqtt queued
+    ~~~
+
+
 
 Google Cloud Platform
 ---------------------
@@ -178,3 +243,8 @@ __mqttClient__ & __mqttGoogleCLI__  components should be installed on your targe
     gmqtt pub <data>
     ~~~
 
+- View sub messages, if any
+
+    ~~~
+    mqtt queued
+    ~~~
