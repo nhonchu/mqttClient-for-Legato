@@ -47,7 +47,7 @@
 #define MQTT_KEEPALIVE	"MqttKeepAlive"
 #define MQTT_QOS		"MqttQoS"
 
-#define 	MAX_OUTBOUND_PAYLOAD_SIZE		256		//Default payload buffer size
+#define 	MAX_OUTBOUND_PAYLOAD_SIZE		1024	//Default payload buffer size
 #define 	MAX_INBOUND_PAYLOAD_SIZE		1024	//Default payload buffer size
 
 #define		SIZE_DEVICE_ID					256
