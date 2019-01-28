@@ -201,7 +201,7 @@ This sample CLI only supports RSA private/public keys to generate JWT for authen
 Use openssl to generate these keys. Upload the public key to Google IOT Core for your device.
 
 ~~~
-openssl genrsa -out rsa_private.pem 2018
+openssl genrsa -out rsa_private.pem 2048
 openssl rsa -in rsa_private.pem -pubout -out rsa_public.pem
 ~~~
 
