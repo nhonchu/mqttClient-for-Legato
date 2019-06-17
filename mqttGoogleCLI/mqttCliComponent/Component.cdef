@@ -7,7 +7,6 @@ requires:
 {
     api:
     {
-        //${MQTT_GOOGLE_CLI_ROOT}/mqttGoogleCliSvr.api
-        mqttGoogleCliSvr.api
+        $CURDIR/../mqttGoogleCliSvr.api
     }
 }
