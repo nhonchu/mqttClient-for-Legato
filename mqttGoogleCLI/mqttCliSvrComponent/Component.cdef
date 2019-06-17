@@ -7,8 +7,7 @@ requires:
 {
     api:
     {
-        //${MQTT_API_ROOT}/mqttClient.api
-        mqttClient.api
+        $CURDIR/../../mqttClientApi/mqttClient.api
         le_data.api
     }
 }
@@ -18,7 +17,6 @@ provides:
 {
     api:
     {
-        //${MQTT_GOOGLE_CLI_ROOT}/mqttGoogleCliSvr.api
-        mqttGoogleCliSvr.api
+        $CURDIR/../mqttGoogleCliSvr.api
     }
 }

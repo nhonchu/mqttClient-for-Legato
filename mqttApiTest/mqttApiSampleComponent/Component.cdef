@@ -3,7 +3,6 @@ requires:
 {
     api:
     {
-        //${MQTT_API_ROOT}/mqttClient.api
         mqttClient.api
         le_data.api
     }

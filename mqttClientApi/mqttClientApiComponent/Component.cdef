@@ -96,15 +96,12 @@ sources:
 
 cflags:
 {
-    -I${MQTT_API_ROOT}
-    -I${MQTT_API_ROOT}/mqttClientApiComponent/paho
-    -I${MQTT_API_ROOT}/mqttClientApiComponent/mqttAirVantage
-    -I${MQTT_API_ROOT}/mqttClientApiComponent/mqttGeneric
-    -I${MQTT_API_ROOT}/mqttClientApiComponent/tlsInterface
-    -I${MQTT_API_ROOT}/mqttClientApiComponent/mbedtls/include
-
-
-    //export MQTT_API_ROOT=/home/legato/github-nhonchu/mqttClient-for-Legato/mqttClientApi
+    -I$CURDIR/../mqttClientApi
+    -I$CURDIR/paho
+    -I$CURDIR/mqttAirVantage
+    -I$CURDIR/mqttGeneric
+    -I$CURDIR/tlsInterface
+    -I$CURDIR/mbedtls/include
 }
 
 
@@ -128,7 +125,6 @@ provides:
 {
     api:
     {
-        //${MQTT_API_ROOT}/mqttClient.api
-        mqttClient.api
+        $CURDIR/../mqttClient.api
     }
 }
