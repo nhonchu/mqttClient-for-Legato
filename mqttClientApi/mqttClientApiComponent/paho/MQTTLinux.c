@@ -192,77 +192,142 @@ void NewNetwork(Network* n, int useTLS)
 }
 
 
-int linux_connect(Network* n, const char* addr, int port, const char * rootCA, const char * certificate, const char * privateKey)
-{
+int linux_connect(Network* n, const char* addr, int port, const char * rootCA,
+		const char * certificate, const char * privateKey) {
 	int rc = -1;
+	int opt;
+	struct timeval timeout;
 
+	if (n->useTLS) {
 
-	if (n->useTLS)
-	{
-
-		if (n->tlsSocketObject)
-		{
+		if (n->tlsSocketObject) {
 			linux_disconnect(n);
 		}
 		n->tlsSocketObject = tlsSocket_create();
-		
-		rc = tlsSocket_connect(n->tlsSocketObject, addr, port, rootCA, certificate, privateKey);
-	}
-	else
-	{
-		if (n->my_socket != -1)
-		{
+
+		rc = tlsSocket_connect(n->tlsSocketObject, addr, port, rootCA,
+				certificate, privateKey);
+	} else {
+		if (n->my_socket != -1) {
 			close(n->my_socket);
 		}
 		int type = SOCK_STREAM;
 		struct sockaddr_in address;
 		sa_family_t family = AF_INET;
 		struct addrinfo *result = NULL;
-		struct addrinfo hints = {0, AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, 0, NULL, NULL, NULL};
+		struct addrinfo hints = { 0, AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, 0,
+				NULL, NULL, NULL };
 
-		if ((rc = getaddrinfo(addr, NULL, &hints, &result)) == 0)
-		{
+		if ((rc = getaddrinfo(addr, NULL, &hints, &result)) == 0) {
 			struct addrinfo* res = result;
 
-			/* prefer ip4 addresses */
-			while (res)
-			{
-				if (res->ai_family == AF_INET)
-				{
+			while (res) {
+				if (res->ai_family == AF_INET) {
 					result = res;
 					break;
 				}
 				res = res->ai_next;
 			}
 
-			if (result->ai_family == AF_INET)
-			{
+			if (result->ai_family == AF_INET) {
 				address.sin_port = htons(port);
 				address.sin_family = family = AF_INET;
-				address.sin_addr = ((struct sockaddr_in*)(result->ai_addr))->sin_addr;
-			}
-			else
+				address.sin_addr =
+						((struct sockaddr_in*) (result->ai_addr))->sin_addr;
+			} else
 				rc = -1;
 
 			freeaddrinfo(result);
 		}
 
-		if (rc == 0)
-		{
-			fprintf(stdout, "Connect : opening socket...");
+		if (rc == 0) {
+			//fprintf(stdout, "Connect : opening socket...");
 			n->my_socket = socket(family, type, 0);
-			fprintf(stdout, "Connect : opening socket : %d", n->my_socket);
-			if (n->my_socket != -1)
-			{
-				//int opt = 1;			
+			fprintf(stdout, "\nConnect : opening socket : %d\n", n->my_socket);
+
+			if (n->my_socket != -1) {
 				struct in_addr ipAddr = address.sin_addr;
 				char str[INET_ADDRSTRLEN];
-				inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
+				inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
+				fprintf(stdout, "\nconnecting to %s:%d\n", str, port);
 
-				fprintf(stdout, "connecting to %s:%d", str, port);
+				// get socket flags
+				if ((opt = fcntl(n->my_socket, F_GETFL, NULL)) < 0) {
+					return -1;
+				}
 
-				rc = connect(n->my_socket, (struct sockaddr*)&address, sizeof(address));
-				fprintf(stdout, "Connect : connection result : %d", rc);
+				// set socket non-blocking
+				if (fcntl(n->my_socket, F_SETFL, opt | O_NONBLOCK) < 0) {
+					return -1;
+				}
+
+				if ((rc = connect(n->my_socket, (struct sockaddr*) &address,
+						sizeof(address))) < 0) {
+					if (errno == EINPROGRESS) {
+						fd_set wait_set;
+
+						// make file descriptor set with socket
+						FD_ZERO(&wait_set);
+						FD_SET(n->my_socket, &wait_set);
+
+						// wait for socket to be writable; return after given timeout
+						timeout.tv_sec = 1;
+						timeout.tv_usec = 0;
+						rc = select(n->my_socket + 1, NULL, &wait_set, NULL,
+								&timeout);
+					}
+				}
+				// connection was successful immediately
+				else {
+					fprintf(stdout,
+							"\nconnection was successful immediately : connection result : %d\n",
+							rc);
+					rc = 0;
+				}
+				// reset socket flags
+				if (fcntl(n->my_socket, F_SETFL, opt) < 0) {
+					fprintf(stdout,
+							"\nreset socket flags : connection result : %d\n", rc);
+					return -1;
+				}
+
+				// an error occured in connect or select
+				if (rc < 0) {
+					fprintf(stdout,
+							"\nan error occured in connect or select : connection result : %d\n",
+							rc);
+					return -1;
+				}
+				// select timed out
+				else if (rc == 0) {
+					errno = ETIMEDOUT;
+					fprintf(stdout, "\ntimed out : connection result : %d\n", rc);
+					return -1;
+				}
+				// almost finished
+				else {
+					socklen_t len = sizeof(opt);
+
+					// check for errors in socket layer
+					if (getsockopt(n->my_socket, SOL_SOCKET, SO_ERROR, &opt,
+							&len) < 0) {
+						fprintf(stdout,
+								"\ncheck for errors in socket layer : connection result : %d\n",
+								rc);
+						return -1;
+					}
+
+					// there was an error
+					if (opt) {
+						errno = opt;
+						fprintf(stdout,
+								"\nthere was an error : connection result : %d\n",
+								rc);
+						return -1;
+					}
+				}
+				fprintf(stdout, "\nConnect : connection result : %d\n", rc);
+
 			}
 			fflush(stdout);
 		}
